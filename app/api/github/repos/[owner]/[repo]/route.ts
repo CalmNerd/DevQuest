@@ -69,7 +69,6 @@ export async function GET(request: NextRequest, { params }: { params: { owner: s
         git_refs_url: `https://api.github.com/repos/${owner}/${repo}/git/refs{/sha}`,
         trees_url: `https://api.github.com/repos/${owner}/${repo}/git/trees{/sha}`,
         statuses_url: `https://api.github.com/repos/${owner}/${repo}/statuses/{sha}`,
-        languages_url: `https://api.github.com/repos/${owner}/${repo}/languages`,
         stargazers_url: `https://api.github.com/repos/${owner}/${repo}/stargazers`,
         contributors_url: `https://api.github.com/repos/${owner}/${repo}/contributors`,
         subscribers_url: `https://api.github.com/repos/${owner}/${repo}/subscribers`,
@@ -117,7 +116,7 @@ export async function GET(request: NextRequest, { params }: { params: { owner: s
           headers: {
             Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
             Accept: "application/vnd.github+json",
-            "User-Agent": "GitRank",
+            "User-Agent": "DevQuest",
           },
         })
         if (languagesResponse.ok) {
