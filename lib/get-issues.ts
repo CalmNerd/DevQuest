@@ -17,7 +17,7 @@ export const getIssues = async (query: string, page: string, perPage: string = "
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: "application/vnd.github+json",
-      "User-Agent": "GitRank",
+      "User-Agent": "DevQuest",
     },
   })
   return response.data
@@ -36,7 +36,7 @@ export const getIssueDetails = async (payload: GetUserDetailsInput) => {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github+json",
-        "User-Agent": "GitRank",
+        "User-Agent": "DevQuest",
       },
     },
   )

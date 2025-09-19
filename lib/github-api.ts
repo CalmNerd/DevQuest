@@ -11,7 +11,7 @@ export class GitHubAPI {
   private async fetch(endpoint: string) {
     const headers: HeadersInit = {
       Accept: "application/vnd.github.v3+json",
-      "User-Agent": "GitRank-App",
+      "User-Agent": "DevQuest-App",
     }
 
     if (this.token) {

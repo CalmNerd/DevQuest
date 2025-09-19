@@ -11,7 +11,7 @@ class GitHubService {
 
     const baseHeaders: Record<string, string> = {
       Accept: "application/vnd.github.v3+json",
-      "User-Agent": "GitRank",
+      "User-Agent": "DevQuest",
       Authorization: `Bearer ${token}`,
       ...(options.headers as Record<string, string> | undefined),
     }
@@ -37,7 +37,7 @@ class GitHubService {
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "User-Agent": "GitRank",
+      "User-Agent": "DevQuest",
       Authorization: `Bearer ${token}`,
     }
 
