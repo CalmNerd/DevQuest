@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color tokens for GitRank gaming theme */
+  /* Updated color tokens for DevQuest gaming theme */
   --background: oklch(0.145 0 0); /* Dark background for gaming feel */
   --foreground: oklch(0.985 0 0); /* White text for readability */
   --card: oklch(0.205 0 0); /* Darker card background */

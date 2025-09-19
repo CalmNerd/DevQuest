@@ -7,9 +7,9 @@ import { Suspense } from "react"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "GitRank - Gamify Your GitHub Experience",
+  title: "DevQuest - Where Developers Compete, Contribute and Hunt Bounties",
   description:
-    "Transform your GitHub contributions into an epic gaming experience with leaderboards, achievements, and Discord-style profiles.",
+    "Make open-source contributions, discover bounty-paying issue/repositories and rank among developers across the globe.",
   generator: "v0.app",
 }
 

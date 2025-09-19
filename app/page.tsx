@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { motion } from "framer-motion"
 import { ProfileCardTrigger } from "@/components/discord-profile-card"
 import Link from "next/link"
+import WorldMap from "@/components/ui/icons/WorldMap"
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -69,7 +70,7 @@ export default function HomePage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <Github className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-foreground">GitRank</span>
+              <span className="text-xl font-bold text-foreground">DevQuest</span>
             </div>
             <div className="flex items-center gap-4">
               <Button variant="ghost" asChild>
@@ -86,7 +87,14 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden py-20">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
+        <div className="absolute inset-0 ">
+          <WorldMap
+            responsive={true}
+            fillColor="#262626"
+            className="opacity-15"
+          />
+        </div>
+        {/* <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" /> */}
         <div className="container relative mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -94,13 +102,13 @@ export default function HomePage() {
             transition={{ duration: 0.8 }}
             className="mx-auto max-w-4xl"
           >
-            <h1 className="mb-6 text-5xl font-bold text-balance md:text-7xl">
-              Level Up Your{" "}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">GitHub Game</span>
+            <h1 className="mb-6 text-4xl font-semibold text-balance space-x-4 whitespace-nowrap">
+              <span className="text-[#F34B7D] px-4 py-2 -skew-x-20 rounded-md bg-[#F34B7D]/40 inline-block"><span className="skew-x-20 rounded inline-block">Compete.</span> </span>
+              <span className="text-[#4B68FE] px-4 py-2 -skew-x-20 rounded-md bg-[#4B68FE]/40 inline-block"><span className="skew-x-20 rounded inline-block">Contribute.</span> </span>
+              <span className="text-[#22E26F] px-4 py-2 -skew-x-20 rounded-md bg-[#22E26F]/40 inline-block"><span className="skew-x-20 rounded inline-block">Hunt Bounties.</span></span>
             </h1>
-            <p className="mb-8 text-xl text-muted-foreground text-pretty">
-              Transform your GitHub contributions into an epic gaming experience. Compete on leaderboards, earn
-              achievements, and showcase your developer skills like never before.
+            <p className="mb-8 text-md text-muted-foreground text-pretty max-w-xl mx-auto">
+              Make open-source contributions, discover bounty-paying issue/repositories and rank among developers across the globe.
             </p>
 
             {/* Search Form */}
@@ -285,7 +293,7 @@ export default function HomePage() {
               <div className="flex h-6 w-6 items-center justify-center rounded bg-primary">
                 <Github className="h-4 w-4 text-primary-foreground" />
               </div>
-              <span className="font-semibold">GitRank</span>
+              <span className="font-semibold">DevQuest</span>
             </div>
             <div className="flex gap-6 text-sm text-muted-foreground">
               <Link href="/privacy" className="hover:text-foreground">

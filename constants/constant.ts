@@ -118,4 +118,4 @@ export const popularLanguages = [
     "Assembly", "Objective-C", "Vue", "React", "Angular", "Node.js", "HTML", "CSS",
     "SCSS", "Sass", "Less", "JSON", "YAML", "XML", "Markdown", "Dockerfile"
 ]
-export const commonLabels = ["good first issue", "help wanted", "GSoC2025", "bug", "enhancement", "documentation"]
+export const commonLabels = ["good first issue","💎 Bounty", "help wanted", "GSoC2025", "bug", "enhancement", "documentation"]
