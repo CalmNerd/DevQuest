@@ -309,6 +309,9 @@ my-nextjs-app/
 4. Add tests if applicable
 5. Submit a pull request
 
+
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/mohittjees-projects/v0-gamified-git-hub-profiles)
+
 ## License
 
 MIT License
