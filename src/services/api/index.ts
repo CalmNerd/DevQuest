@@ -1,0 +1,5 @@
+export { leaderboardService } from './leaderboard.service'
+export { badgeService } from './badge.service'
+export { powerLevelService } from './power-level.service'
+export { backgroundService } from './background.service'
+export { issuesService } from './issues.service'

@@ -6,6 +6,8 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit",
     "start": "next start",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -13,7 +15,12 @@
     "db:studio": "drizzle-kit studio",
     "db:test": "tsx scripts/test-database.ts",
     "test:leaderboard": "tsx scripts/test-leaderboard.ts",
-    "test:contribution-graph": "tsx scripts/test-contribution-graph.ts"
+    "test:contribution-graph": "tsx scripts/test-contribution-graph.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "clean": "rm -rf .next node_modules/.cache",
+    "update-imports": "node scripts/update-imports.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "latest",
