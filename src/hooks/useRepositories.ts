@@ -24,11 +24,6 @@ interface UseRepositoriesReturn extends UseRepositoriesState {
   reset: () => void
 }
 
-/**
- * Custom hook for managing repository data fetching
- * Provides loading states, error handling, and pagination
- * Removes mock data fallbacks and implements proper error states
- */
 export function useRepositories(initialFilters?: RepositorySearchFilters): UseRepositoriesReturn {
   const [state, setState] = useState<UseRepositoriesState>({
     repositories: [],
@@ -72,6 +67,8 @@ export function useRepositories(initialFilters?: RepositorySearchFilters): UseRe
       params.append('per_page', filters.per_page?.toString() || '10')
 
       const response = await fetch(`/api/repositories?${params.toString()}`)
+
+      console.log('response', response)
       
       if (!response.ok) {
         const errorData = await response.json()

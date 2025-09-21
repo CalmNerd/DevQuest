@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { TrendingUp, RefreshCw, Loader2 } from 'lucide-react'
+import { TrendingUp, RefreshCw, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
@@ -18,15 +18,17 @@ export default function RepositoryTrendingPage() {
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'yearly' | '2024' | '2023' | '2022' | '2021' | '2020'>('weekly')
   const [language, setLanguage] = useState<string>('')
   const [allTimeSort, setAllTimeSort] = useState<'stars' | 'forks' | 'updated' | 'created'>('stars')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10) // Fixed at 10 items per page as requested
 
   const filters = useMemo(() => ({
     type,
     period,
     language: language || undefined,
-    limit: 30,
-    page: 1,
+    limit: itemsPerPage,
+    page: currentPage,
     sort: allTimeSort
-  }), [type, period, language, allTimeSort])
+  }), [type, period, language, allTimeSort, currentPage, itemsPerPage])
 
   const { repositories, loading, error, pagination, fetchTrendingRepositories } = useTrendingRepositories(filters)
 
@@ -83,6 +85,42 @@ export default function RepositoryTrendingPage() {
 
   const handleRefresh = () => {
     fetchTrendingRepositories(filters)
+  }
+
+  // Reset to page 1 when filters change
+  const handleFilterChange = (filterType: string, value: any) => {
+    setCurrentPage(1) // Reset to first page when filters change
+    switch (filterType) {
+      case 'type':
+        setType(value)
+        break
+      case 'period':
+        setPeriod(value)
+        break
+      case 'language':
+        setLanguage(value)
+        break
+      case 'allTimeSort':
+        setAllTimeSort(value)
+        break
+    }
+  }
+
+  // Pagination handlers
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handlePreviousPage = () => {
+    if (pagination.hasPrevPage) {
+      setCurrentPage(prev => prev - 1)
+    }
+  }
+
+  const handleNextPage = () => {
+    if (pagination.hasNextPage) {
+      setCurrentPage(prev => prev + 1)
+    }
   }
 
   return (
@@ -142,71 +180,71 @@ export default function RepositoryTrendingPage() {
                   </Button>
                 </div>
 
-                {/* Filters */}
-                <div className="flex gap-4 flex-wrap">
-                  <Select value={type} onValueChange={(value: any) => setType(value)}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all-time">All-Time Top</SelectItem>
-                      <SelectItem value="stars">Most Starred</SelectItem>
-                      <SelectItem value="forks">Most Forked</SelectItem>
-                      <SelectItem value="language">By Language</SelectItem>
-                      <SelectItem value="recently-created">Recently Created</SelectItem>
-                      <SelectItem value="recently-updated">Recently Updated</SelectItem>
-                    </SelectContent>
-                  </Select>
+                 {/* Filters */}
+                 <div className="flex gap-4 flex-wrap">
+                   <Select value={type} onValueChange={(value: any) => handleFilterChange('type', value)}>
+                     <SelectTrigger className="w-40">
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="all-time">All-Time Top</SelectItem>
+                       <SelectItem value="stars">Most Starred</SelectItem>
+                       <SelectItem value="forks">Most Forked</SelectItem>
+                       <SelectItem value="language">By Language</SelectItem>
+                       <SelectItem value="recently-created">Recently Created</SelectItem>
+                       <SelectItem value="recently-updated">Recently Updated</SelectItem>
+                     </SelectContent>
+                   </Select>
 
-                  {type !== 'all-time' && type !== 'recently-created' && type !== 'recently-updated' && (
-                    <Select value={period} onValueChange={(value: any) => setPeriod(value)}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Today</SelectItem>
-                        <SelectItem value="weekly">This Week</SelectItem>
-                        <SelectItem value="monthly">This Month</SelectItem>
-                        <SelectItem value="yearly">This Year</SelectItem>
-                        <SelectItem value="2024">Year 2024</SelectItem>
-                        <SelectItem value="2023">Year 2023</SelectItem>
-                        <SelectItem value="2022">Year 2022</SelectItem>
-                        <SelectItem value="2021">Year 2021</SelectItem>
-                        <SelectItem value="2020">Year 2020</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
+                   {type !== 'all-time' && type !== 'recently-created' && type !== 'recently-updated' && (
+                     <Select value={period} onValueChange={(value: any) => handleFilterChange('period', value)}>
+                       <SelectTrigger className="w-40">
+                         <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="daily">Today</SelectItem>
+                         <SelectItem value="weekly">This Week</SelectItem>
+                         <SelectItem value="monthly">This Month</SelectItem>
+                         <SelectItem value="yearly">This Year</SelectItem>
+                         <SelectItem value="2024">Year 2024</SelectItem>
+                         <SelectItem value="2023">Year 2023</SelectItem>
+                         <SelectItem value="2022">Year 2022</SelectItem>
+                         <SelectItem value="2021">Year 2021</SelectItem>
+                         <SelectItem value="2020">Year 2020</SelectItem>
+                       </SelectContent>
+                     </Select>
+                   )}
 
-                  {type === 'language' && (
-                    <Select value={language || 'all'} onValueChange={setLanguage}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder="Language" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Languages</SelectItem>
-                        {popularLanguages.slice(0, 20).map((lang) => (
-                          <SelectItem key={lang} value={lang}>
-                            {lang}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                   {type === 'language' && (
+                     <Select value={language || 'all'} onValueChange={(value: any) => handleFilterChange('language', value)}>
+                       <SelectTrigger className="w-40">
+                         <SelectValue placeholder="Language" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="all">All Languages</SelectItem>
+                         {popularLanguages.slice(0, 20).map((lang) => (
+                           <SelectItem key={lang} value={lang}>
+                             {lang}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
+                   )}
 
-                  {type === 'all-time' && (
-                    <Select value={allTimeSort} onValueChange={(value: any) => setAllTimeSort(value)}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="stars">By Stars</SelectItem>
-                        <SelectItem value="forks">By Forks</SelectItem>
-                        <SelectItem value="updated">Recently Updated</SelectItem>
-                        <SelectItem value="created">Recently Created</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
+                   {type === 'all-time' && (
+                     <Select value={allTimeSort} onValueChange={(value: any) => handleFilterChange('allTimeSort', value)}>
+                       <SelectTrigger className="w-32">
+                         <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="stars">By Stars</SelectItem>
+                         <SelectItem value="forks">By Forks</SelectItem>
+                         <SelectItem value="updated">Recently Updated</SelectItem>
+                         <SelectItem value="created">Recently Created</SelectItem>
+                       </SelectContent>
+                     </Select>
+                   )}
+                 </div>
               </CardHeader>
 
               <CardContent>
@@ -318,14 +356,102 @@ export default function RepositoryTrendingPage() {
                   </div>
                 )}
 
-                {!loading && !error && repositories.length === 0 && (
-                  <div className="text-center py-8">
-                    <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No trending repositories found</p>
-                    <p className="text-sm text-muted-foreground">Try adjusting your filters</p>
-                  </div>
-                )}
-              </CardContent>
+                 {!loading && !error && repositories.length === 0 && (
+                   <div className="text-center py-8">
+                     <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                     <p className="text-muted-foreground">No trending repositories found</p>
+                     <p className="text-sm text-muted-foreground">Try adjusting your filters</p>
+                   </div>
+                 )}
+
+                 {/* Pagination */}
+                 {!loading && !error && repositories.length > 0 && pagination.totalPages > 1 && (
+                   <div className="mt-8 pt-6 border-t">
+                     {/* Pagination Info */}
+                     <div className="text-center text-sm text-muted-foreground mb-4">
+                       Showing {((pagination.currentPage - 1) * itemsPerPage) + 1} to{' '}
+                       {Math.min(pagination.currentPage * itemsPerPage, pagination.totalCount)} of{' '}
+                       {pagination.totalCount.toLocaleString()} repositories
+                     </div>
+
+                     {/* Pagination Controls */}
+                     <div className="flex items-center justify-center gap-2">
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         onClick={handlePreviousPage}
+                         disabled={!pagination.hasPrevPage || loading}
+                         className="gap-1"
+                       >
+                         <ChevronLeft className="h-4 w-4" />
+                         Previous
+                       </Button>
+
+                       {/* Page Numbers */}
+                       <div className="flex items-center gap-1">
+                         {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                           let page: number
+                           if (pagination.totalPages <= 5) {
+                             page = i + 1
+                           } else if (pagination.currentPage <= 3) {
+                             page = i + 1
+                           } else if (pagination.currentPage >= pagination.totalPages - 2) {
+                             page = pagination.totalPages - 4 + i
+                           } else {
+                             page = pagination.currentPage - 2 + i
+                           }
+
+                           return (
+                             <Button
+                               key={page}
+                               variant={pagination.currentPage === page ? "default" : "outline"}
+                               size="sm"
+                               onClick={() => handlePageChange(page)}
+                               disabled={loading}
+                               className="w-10"
+                             >
+                               {page}
+                             </Button>
+                           )
+                         })}
+                       </div>
+
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         onClick={handleNextPage}
+                         disabled={!pagination.hasNextPage || loading}
+                         className="gap-1"
+                       >
+                         Next
+                         <ChevronRight className="h-4 w-4" />
+                       </Button>
+                     </div>
+
+                     {/* Quick Jump */}
+                     {pagination.totalPages > 10 && (
+                       <div className="mt-4 text-center">
+                         <span className="text-sm text-muted-foreground mr-2">Jump to page:</span>
+                         <Select
+                           value={pagination.currentPage.toString()}
+                           onValueChange={(value) => handlePageChange(parseInt(value))}
+                         >
+                           <SelectTrigger className="w-20 inline-flex">
+                             <SelectValue />
+                           </SelectTrigger>
+                           <SelectContent>
+                             {Array.from({ length: pagination.totalPages }, (_, i) => (
+                               <SelectItem key={i + 1} value={(i + 1).toString()}>
+                                 {i + 1}
+                               </SelectItem>
+                             ))}
+                           </SelectContent>
+                         </Select>
+                       </div>
+                     )}
+                   </div>
+                 )}
+               </CardContent>
             </Card>
           </motion.div>
         </div>
