@@ -1,17 +1,15 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
 import {
   TrendingUp,
   Star,
   GitFork,
   Calendar,
-  Code,
   Loader2,
   RefreshCw,
-  ChevronRight,
   Flame,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -51,7 +49,7 @@ export default function TrendingRepositories({
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
 
-  const fetchTrendingRepositories = async () => {
+  const fetchTrendingRepositories = useCallback(async (): Promise<void> => {
     setLoading(true)
     setError(null)
 
@@ -92,11 +90,11 @@ export default function TrendingRepositories({
     } finally {
       setLoading(false)
     }
-  }
+  }, [type, period, language, limit, allTimeSort, currentPage])
 
   useEffect(() => {
     fetchTrendingRepositories()
-  }, [type, period, language, limit, allTimeSort, currentPage])
+  }, [fetchTrendingRepositories])
 
   const getLanguageColor = (language: string) => {
     return (githubColors as any)[language] || "#6b7280"

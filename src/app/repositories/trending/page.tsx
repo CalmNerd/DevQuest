@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { TrendingUp, RefreshCw, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -19,14 +19,16 @@ export default function RepositoryTrendingPage() {
   const [language, setLanguage] = useState<string>('')
   const [allTimeSort, setAllTimeSort] = useState<'stars' | 'forks' | 'updated' | 'created'>('stars')
 
-  const { repositories, loading, error, pagination, fetchTrendingRepositories } = useTrendingRepositories({
+  const filters = useMemo(() => ({
     type,
     period,
     language: language || undefined,
     limit: 30,
     page: 1,
     sort: allTimeSort
-  })
+  }), [type, period, language, allTimeSort])
+
+  const { repositories, loading, error, pagination, fetchTrendingRepositories } = useTrendingRepositories(filters)
 
   const getLanguageColor = (language: string) => {
     return (githubColors as any)[language] || "#6b7280"
@@ -80,14 +82,7 @@ export default function RepositoryTrendingPage() {
   }
 
   const handleRefresh = () => {
-    fetchTrendingRepositories({
-      type,
-      period,
-      language: language || undefined,
-      limit: 30,
-      page: 1,
-      sort: allTimeSort
-    })
+    fetchTrendingRepositories(filters)
   }
 
   return (

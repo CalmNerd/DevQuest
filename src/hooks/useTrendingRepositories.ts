@@ -123,7 +123,15 @@ export function useTrendingRepositories(initialFilters?: TrendingFilters): UseTr
     if (initialFilters) {
       fetchTrendingRepositories(initialFilters)
     }
-  }, [initialFilters, fetchTrendingRepositories])
+  }, [
+    initialFilters?.type,
+    initialFilters?.period,
+    initialFilters?.language,
+    initialFilters?.limit,
+    initialFilters?.page,
+    initialFilters?.sort,
+    fetchTrendingRepositories
+  ])
 
   return {
     ...state,
