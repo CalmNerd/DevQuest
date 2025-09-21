@@ -18,6 +18,9 @@ const Header = () => {
                             <Link href="/leaderboards">Leaderboards</Link>
                         </Button>
                         <Button variant="ghost" asChild>
+                            <Link href="/repositories">Explore Repos</Link>
+                        </Button>
+                        <Button variant="ghost" asChild>
                             <Link href="/issues-list">Hunt Issues</Link>
                         </Button>
                         <Button variant="outline">Sign In</Button>
