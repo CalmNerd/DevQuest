@@ -70,6 +70,150 @@ export interface GitHubRepo {
   created_at: string
   updated_at: string
   pushed_at: string
+  size: number
+  open_issues_count: number
+  topics: string[]
+  license?: {
+    key: string
+    name: string
+    spdx_id: string
+    url: string
+    node_id: string
+  } | null
+  default_branch: string
+  archived: boolean
+  disabled: boolean
+  fork: boolean
+  private: boolean
+  visibility: string
+  owner: {
+    login: string
+    id: number
+    avatar_url: string
+    html_url: string
+    type: string
+  }
+  clone_url: string
+  ssh_url: string
+  homepage?: string | null
+  language_color?: string
+  languages?: Record<string, number>
+}
+
+export interface GitHubSearchRepo {
+  id: number
+  name: string
+  full_name: string
+  description: string | null
+  html_url: string
+  stargazers_count: number
+  watchers_count: number
+  language: string | null
+  forks_count: number
+  created_at: string
+  updated_at: string
+  pushed_at: string
+  size: number
+  open_issues_count: number
+  topics: string[]
+  license?: {
+    key: string
+    name: string
+    spdx_id: string
+    url: string
+    node_id: string
+  } | null
+  default_branch: string
+  archived: boolean
+  disabled: boolean
+  fork: boolean
+  private: boolean
+  visibility: string
+  owner: {
+    login: string
+    id: number
+    avatar_url: string
+    html_url: string
+    type: string
+  }
+  clone_url: string
+  ssh_url: string
+  homepage?: string | null
+  language_color?: string
+  languages?: Record<string, number>
+  score: number
+}
+
+export interface GitHubSearchResponse {
+  total_count: number
+  incomplete_results: boolean
+  items: GitHubSearchRepo[]
+}
+
+export interface RepositorySearchFilters {
+  query: string
+  sort: 'stars' | 'forks' | 'help-wanted-issues' | 'updated' | 'created'
+  order: 'asc' | 'desc'
+  language?: string
+  license?: string
+  topic?: string
+  user?: string
+  org?: string
+  archived?: boolean
+  fork?: boolean
+  created?: string
+  pushed?: string
+  size?: string
+  stars?: string
+  forks?: string
+  page?: number
+  per_page?: number
+}
+
+export interface TrendingRepository {
+  id: number
+  name: string
+  full_name: string
+  description: string | null
+  html_url: string
+  stargazers_count: number
+  watchers_count: number
+  language: string | null
+  forks_count: number
+  created_at: string
+  updated_at: string
+  pushed_at: string
+  size: number
+  open_issues_count: number
+  topics: string[]
+  license?: {
+    key: string
+    name: string
+    spdx_id: string
+    url: string
+    node_id: string
+  } | null
+  default_branch: string
+  archived: boolean
+  disabled: boolean
+  fork: boolean
+  private: boolean
+  visibility: string
+  owner: {
+    login: string
+    id: number
+    avatar_url: string
+    html_url: string
+    type: string
+  }
+  clone_url: string
+  ssh_url: string
+  homepage?: string | null
+  language_color?: string
+  languages?: Record<string, number>
+  score: number
+  trend_score: number
+  period: 'daily' | 'weekly' | 'monthly' | 'yearly' | '2024' | '2023' | '2022' | '2021' | '2020'
 }
 
 export interface GitHubContribution {
