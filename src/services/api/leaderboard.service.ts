@@ -186,7 +186,7 @@ class LeaderboardService {
     }
   }
 
-  async getLeaderboardWithUsers(period: string, limit = 50) {
+  async getLeaderboardWithUsers(period: string, limit: number, offset = 0) {
     const now = new Date()
     let periodDate: string
 
@@ -219,7 +219,12 @@ class LeaderboardService {
         score: leaderboards.score,
         userId: leaderboards.userId,
         username: users.username,
+        name: users.name,
         profileImageUrl: users.profileImageUrl,
+        githubUrl: users.githubUrl,
+        bio: users.bio,
+        location: users.location,
+        createdAt: users.createdAt,
         updatedAt: leaderboards.updatedAt,
       })
       .from(leaderboards)
@@ -227,15 +232,50 @@ class LeaderboardService {
       .where(and(eq(leaderboards.period, period), eq(leaderboards.periodDate, periodDate)))
       .orderBy(leaderboards.rank)
       .limit(limit)
+      .offset(offset)
 
     return result.map((entry) => ({
       ...entry,
       rank: entry.rank || 0,
     }))
   }
+  
+  async getTotalLeaderboardUsersCount(period: string): Promise<number> {
+    const now = new Date()
+    let periodDate: string
 
-  async getTopPerformers(period: string, limit = 10) {
-    return await this.getLeaderboardWithUsers(period, limit)
+    switch (period) {
+      case "daily":
+        periodDate = now.toISOString().split("T")[0]
+        break
+      case "weekly": {
+        const weekStart = this.getWeekStartUtcDate(now)
+        periodDate = weekStart.toISOString().split("T")[0]
+        break
+      }
+      case "monthly":
+        periodDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+        break
+      case "yearly":
+        periodDate = String(now.getFullYear())
+        break
+      case "global":
+        periodDate = "all-time"
+        break
+      default:
+        periodDate = now.toISOString().split("T")[0]
+    }
+
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(leaderboards)
+      .where(and(eq(leaderboards.period, period), eq(leaderboards.periodDate, periodDate)))
+
+    return result[0]?.count || 0
+  }
+
+  async getTopPerformers(period: string, limit = 10, offset = 0) {
+    return await this.getLeaderboardWithUsers(period, limit, offset)
   }
 
   async getUserLeaderboardPosition(userId: string, period: string) {

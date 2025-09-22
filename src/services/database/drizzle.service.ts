@@ -126,12 +126,17 @@ export class DrizzleDatabaseService {
       .limit(limit)
       .offset(offset)
   }
-
-  // ==================== GITHUB STATS OPERATIONS ====================
-
-  /**
-   * Get GitHub stats for user with optimized query
-   */
+  
+  async getTotalUsersCount(): Promise<number> {
+    const [result] = await db
+      .select({ count: count() })
+      .from(users)
+      .innerJoin(githubStats, eq(users.id, githubStats.userId))
+    
+    return result.count
+  }
+  
+  //-----github stats operations-----
   async getGithubStats(userId: string): Promise<GithubStats | null> {
     const [stats] = await db
       .select()
@@ -141,10 +146,7 @@ export class DrizzleDatabaseService {
     
     return stats || null
   }
-
-  /**
-   * Upsert GitHub stats with conflict resolution
-   */
+  
   async upsertGithubStats(statsData: Partial<GithubStats>): Promise<GithubStats> {
     if (!statsData.userId) {
       throw new Error("User ID is required for upsert operation")
@@ -232,11 +234,8 @@ export class DrizzleDatabaseService {
     
     return stats
   }
-
-  /**
-   * Get top users by points with optimized query
-   */
-  async getTopUsersByPoints(limit = 10): Promise<any[]> {
+  
+  async getTopUsersByPoints(limit = 10, offset = 0): Promise<any[]> {
     return await db
       .select({
         id: users.id,
@@ -244,6 +243,8 @@ export class DrizzleDatabaseService {
         name: users.name,
         profileImageUrl: users.profileImageUrl,
         githubUrl: users.githubUrl,
+        bio: users.bio,
+        location: users.location,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
         points: githubStats.points,
@@ -252,12 +253,10 @@ export class DrizzleDatabaseService {
       .innerJoin(githubStats, eq(users.id, githubStats.userId))
       .orderBy(desc(githubStats.points))
       .limit(limit)
+      .offset(offset)
   }
-
-  /**
-   * Get users with most stars
-   */
-  async getTopUsersByStars(limit = 10): Promise<any[]> {
+  
+  async getTopUsersByStars(limit = 10, offset = 0): Promise<any[]> {
     return await db
       .select({
         id: users.id,
@@ -265,6 +264,8 @@ export class DrizzleDatabaseService {
         name: users.name,
         profileImageUrl: users.profileImageUrl,
         githubUrl: users.githubUrl,
+        bio: users.bio,
+        location: users.location,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
         totalStars: githubStats.totalStars,
@@ -273,12 +274,10 @@ export class DrizzleDatabaseService {
       .innerJoin(githubStats, eq(users.id, githubStats.userId))
       .orderBy(desc(githubStats.totalStars))
       .limit(limit)
+      .offset(offset)
   }
-
-  /**
-   * Get users with longest streaks
-   */
-  async getTopUsersByStreak(limit = 10): Promise<any[]> {
+  
+  async getTopUsersByStreak(limit = 10, offset = 0): Promise<any[]> {
     return await db
       .select({
         id: users.id,
@@ -286,6 +285,8 @@ export class DrizzleDatabaseService {
         name: users.name,
         profileImageUrl: users.profileImageUrl,
         githubUrl: users.githubUrl,
+        bio: users.bio,
+        location: users.location,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
         longestStreak: githubStats.longestStreak,
@@ -294,12 +295,10 @@ export class DrizzleDatabaseService {
       .innerJoin(githubStats, eq(users.id, githubStats.userId))
       .orderBy(desc(githubStats.longestStreak))
       .limit(limit)
+      .offset(offset)
   }
-
-  /**
-   * Get users with most repositories
-   */
-  async getTopUsersByRepositories(limit = 10): Promise<any[]> {
+  
+  async getTopUsersByRepositories(limit = 10, offset = 0): Promise<any[]> {
     return await db
       .select({
         id: users.id,
@@ -318,12 +317,10 @@ export class DrizzleDatabaseService {
       .innerJoin(githubStats, eq(users.id, githubStats.userId))
       .orderBy(desc(githubStats.totalRepositories))
       .limit(limit)
+      .offset(offset)
   }
-
-  /**
-   * Get users with most followers
-   */
-  async getTopUsersByFollowers(limit = 10): Promise<any[]> {
+  
+  async getTopUsersByFollowers(limit = 10, offset = 0): Promise<any[]> {
     return await db
       .select({
         id: users.id,
@@ -342,23 +339,18 @@ export class DrizzleDatabaseService {
       .innerJoin(githubStats, eq(users.id, githubStats.userId))
       .orderBy(desc(githubStats.followers))
       .limit(limit)
+      .offset(offset)
   }
 
   // ==================== ACHIEVEMENT OPERATIONS ====================
 
-  /**
-   * Get all available achievements
-   */
   async getAllAchievements(): Promise<Achievement[]> {
     return await db
       .select()
       .from(achievements)
       .orderBy(asc(achievements.category), asc(achievements.points))
   }
-
-  /**
-   * Get user achievements with achievement details
-   */
+  
   async getUserAchievements(userId: string): Promise<any[]> {
     return await db
       .select()
@@ -367,10 +359,7 @@ export class DrizzleDatabaseService {
       .where(eq(userAchievements.userId, userId))
       .orderBy(desc(userAchievements.unlockedAt))
   }
-
-  /**
-   * Unlock achievement for user
-   */
+  
   async unlockAchievement(userId: string, achievementId: number): Promise<UserAchievement | null> {
     const [achievement] = await db
       .insert(userAchievements)
@@ -383,10 +372,7 @@ export class DrizzleDatabaseService {
     
     return achievement || null
   }
-
-  /**
-   * Get achievement statistics
-   */
+  
   async getAchievementStats(): Promise<{
     totalAchievements: number
     totalUnlocked: number
@@ -430,9 +416,6 @@ export class DrizzleDatabaseService {
 
   // ==================== LEADERBOARD OPERATIONS ====================
 
-  /**
-   * Get leaderboard for specific period
-   */
   async getLeaderboard(period: string, periodDate: string, limit = 50): Promise<Leaderboard[]> {
     return await db
       .select()
@@ -444,10 +427,7 @@ export class DrizzleDatabaseService {
       .orderBy(asc(leaderboards.rank))
       .limit(limit)
   }
-
-  /**
-   * Get leaderboard with user details
-   */
+  
   async getLeaderboardWithUsers(period: string, periodDate: string, limit = 50): Promise<any[]> {
     return await db
       .select()
@@ -460,10 +440,7 @@ export class DrizzleDatabaseService {
       .orderBy(asc(leaderboards.rank))
       .limit(limit)
   }
-
-  /**
-   * Update leaderboard entry
-   */
+  
   async updateLeaderboardEntry(entry: Partial<Leaderboard>): Promise<Leaderboard> {
     if (!entry.userId || !entry.period || !entry.periodDate) {
       throw new Error("userId, period, and periodDate are required for leaderboard entry")
@@ -493,10 +470,7 @@ export class DrizzleDatabaseService {
     
     return result
   }
-
-  /**
-   * Update ranks for a specific period
-   */
+  
   async updateRanksForPeriod(period: string, periodDate: string): Promise<void> {
     await db.execute(sql`
       WITH ordered AS (
@@ -514,9 +488,6 @@ export class DrizzleDatabaseService {
 
   // ==================== ANALYTICS OPERATIONS ====================
 
-  /**
-   * Get platform statistics with error handling
-   */
   async getPlatformStats(): Promise<{
     totalUsers: number
     totalPoints: number
@@ -558,10 +529,7 @@ export class DrizzleDatabaseService {
       }
     }
   }
-
-  /**
-   * Get user growth over time with error handling
-   */
+  
   async getUserGrowth(days = 30): Promise<Array<{ date: string; count: number }>> {
     try {
       const result = await db.execute(sql`
@@ -580,10 +548,7 @@ export class DrizzleDatabaseService {
       return []
     }
   }
-
-  /**
-   * Get language distribution with error handling
-   */
+  
   async getLanguageDistribution(): Promise<Array<{ language: string; count: number }>> {
     try {
       const result = await db.execute(sql`

@@ -7,41 +7,53 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get("type") || "points"
     const period = searchParams.get("period") || "global"
-    const limit = Number.parseInt(searchParams.get("limit") || "20")
+    const page = Number.parseInt(searchParams.get("page") || "1")
+    const limit = Number.parseInt(searchParams.get("limit") || "30")
+    
+    // Calculate offset for pagination
+    const offset = (page - 1) * limit
 
-    console.log(`[Leaderboard] Fetching ${type} leaderboard for period ${period}`)
+    console.log(`[Leaderboard] Fetching ${type} leaderboard for period ${period}, page ${page}, limit ${limit}`)
 
     let leaderboardData: any[] = []
+    let totalCount: number = 0
 
     switch (type) {
       case "points":
-        leaderboardData = await drizzleDb.getTopUsersByPoints(limit)
+        leaderboardData = await drizzleDb.getTopUsersByPoints(limit, offset)
+        totalCount = await drizzleDb.getTotalUsersCount()
         break
       case "stars":
-        leaderboardData = await drizzleDb.getTopUsersByStars(limit)
+        leaderboardData = await drizzleDb.getTopUsersByStars(limit, offset)
+        totalCount = await drizzleDb.getTotalUsersCount()
         break
       case "streak":
-        leaderboardData = await drizzleDb.getTopUsersByStreak(limit)
+        leaderboardData = await drizzleDb.getTopUsersByStreak(limit, offset)
+        totalCount = await drizzleDb.getTotalUsersCount()
         break
       case "commits":
         // Get users with most commits from leaderboard
-        leaderboardData = await leaderboardService.getLeaderboardWithUsers(period, limit)
+        leaderboardData = await leaderboardService.getLeaderboardWithUsers(period, limit, offset)
+        totalCount = await leaderboardService.getTotalLeaderboardUsersCount(period)
         break
       case "repos":
         // Get users with most repositories
-        leaderboardData = await drizzleDb.getTopUsersByRepositories(limit)
+        leaderboardData = await drizzleDb.getTopUsersByRepositories(limit, offset)
+        totalCount = await drizzleDb.getTotalUsersCount()
         break
       case "followers":
         // Get users with most followers
-        leaderboardData = await drizzleDb.getTopUsersByFollowers(limit)
+        leaderboardData = await drizzleDb.getTopUsersByFollowers(limit, offset)
+        totalCount = await drizzleDb.getTotalUsersCount()
         break
       default:
-        leaderboardData = await drizzleDb.getTopUsersByPoints(limit)
+        leaderboardData = await drizzleDb.getTopUsersByPoints(limit, offset)
+        totalCount = await drizzleDb.getTotalUsersCount()
     }
 
     // Transform data to match expected format
     const entries = leaderboardData.map((user, index) => ({
-      rank: index + 1,
+      rank: offset + index + 1, // Calculate global rank based on offset
       username: user.username,
       name: user.name,
       avatar_url: user.profileImageUrl,
@@ -58,13 +70,25 @@ export async function GET(request: NextRequest) {
       updatedAt: user.updatedAt,
     }))
 
-    console.log(`[Leaderboard] Found ${entries.length} entries for ${type}`)
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalCount / limit)
+    const hasNextPage = page < totalPages
+    const hasPrevPage = page > 1
+
+    console.log(`[Leaderboard] Found ${entries.length} entries for ${type}, page ${page}/${totalPages}`)
 
     return NextResponse.json({
       type,
       period,
       entries,
-      total: entries.length,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCount,
+        limit,
+        hasNextPage,
+        hasPrevPage,
+      },
       lastUpdated: new Date().toISOString(),
     })
   } catch (error) {
