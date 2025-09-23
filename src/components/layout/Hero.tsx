@@ -14,35 +14,40 @@ const Hero = () => {
         }
     }
     return (
-        <section className="relative overflow-hidden py-20">
-            <div className="absolute inset-0 ">
+        <section className="relative container mx-auto h-dvh w-full flex items-center justify-center">
+            <div className="absolute inset-0 mt-4">
                 <WorldMap
                     responsive={true}
                     fillColor="#262626"
-                    className="opacity-15"
+                    className="opacity-60 w-full h-full"
+                    enableRainbowPulse={true}
+                    maxAnimatedElements={8}
+                    animationDuration={8000}
                 />
             </div>
             {/* <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" /> */}
-            <div className="container relative mx-auto px-4 text-center">
+            <div className="relative w-full max-w-7xl mx-auto px-4 text-center">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8 }}
-                    className="mx-auto max-w-4xl"
+                    className="mx-auto max-w-5xl flex flex-col items-center justify-center min-h-full"
                 >
-                    <h1 className="mb-6 text-4xl font-semibold text-balance space-x-4 whitespace-nowrap">
-                        <span className="text-[#F34B7D] px-4 py-2 -skew-x-20 rounded-md bg-[#F34B7D]/40 inline-block"><span className="skew-x-20 rounded inline-block">Compete.</span> </span>
-                        <span className="text-[#4B68FE] px-4 py-2 -skew-x-20 rounded-md bg-[#4B68FE]/40 inline-block"><span className="skew-x-20 rounded inline-block">Contribute.</span> </span>
-                        <span className="text-[#22E26F] px-4 py-2 -skew-x-20 rounded-md bg-[#22E26F]/40 inline-block"><span className="skew-x-20 rounded inline-block">Hunt Bounties.</span></span>
+                    <h1 className="mb-6 text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-semibold text-balance">
+                        <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0 items-center justify-center">
+                            <span className="text-[#F34B7D] px-4 py-2 -skew-x-20 rounded-md bg-[#F34B7D]/40 inline-block  backdrop-blur-xs"><span className="skew-x-20 rounded inline-block">Compete.</span></span>
+                            <span className="text-[#4B68FE] px-4 py-2 -skew-x-20 rounded-md bg-[#4B68FE]/40 inline-block  backdrop-blur-xs"><span className="skew-x-20 rounded inline-block">Contribute.</span></span>
+                            <span className="text-[#22E26F] px-4 py-2 -skew-x-20 rounded-md bg-[#22E26F]/40 inline-block  backdrop-blur-xs"><span className="skew-x-20 rounded inline-block">Hunt Bounties.</span></span>
+                        </div>
                     </h1>
-                    <p className="mb-8 text-md text-muted-foreground text-pretty max-w-xl mx-auto">
-                        Make open-source contributions, discover bounty-paying issue/repositories and rank among developers across the globe.
+                    <p className="mb-8 text-md text-muted-foreground/80 text-pretty max-w-xl mx-auto">
+                        Make <span className='font-bold text-muted-foreground p-1'>open-source</span> contributions, discover <span className='font-bold text-muted-foreground p-1 rounded-md'>bounty-paying</span> issue/repositories and <span className='font-bold text-muted-foreground p-1 rounded-md'>rank</span> among developers across <span className='font-bold text-muted-foreground p-1 rounded-md'>the globe.</span>
                     </p>
 
                     {/* Search Form */}
                     <form onSubmit={handleSearch} className="mx-auto mb-12 max-w-md">
                         <div className="flex gap-2">
-                            <div className="relative flex-1">
+                            <div className="relative flex-1 backdrop-blur-xs">
                                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     type="text"
@@ -52,8 +57,8 @@ const Hero = () => {
                                     className="pl-10"
                                 />
                             </div>
-                            <Button type="submit" className="animate-glow">
-                                <Zap className="mr-2 h-4 w-4" />
+                            <Button type="submit" className="px-1">
+                                <Zap className=" h-4 w-4" />
                                 Rank Up
                             </Button>
                         </div>

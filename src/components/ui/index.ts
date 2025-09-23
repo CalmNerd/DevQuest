@@ -1,7 +1,3 @@
-/**
- * Central export file for UI components
- */
-
 export { Button } from './button'
 export { Input } from './input'
 export { Card, CardContent, CardHeader, CardTitle } from './card'

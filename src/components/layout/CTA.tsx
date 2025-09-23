@@ -4,7 +4,7 @@ import { Github } from "lucide-react"
 
 const CTA = () => {
     return (
-        <section className="py-20">
+        <section className="py-10">
             <div className="container mx-auto px-4 text-center">
                 <Card className="mx-auto max-w-2xl bg-gradient-to-br from-primary/10 to-accent/10">
                     <CardContent className="p-12">

@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ProfileCardTrigger } from '@/components/features/discord-profile-card'
 import { getPowerLevelFromPoints } from '@/lib/utils'
+import Header from "@/components/layout/Header"
 
 interface LeaderboardEntry {
   rank: number
@@ -179,37 +180,36 @@ export default function LeaderboardsPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b border-border bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Leaderboards</h1>
-              <p className="text-muted-foreground">Compete with developers worldwide</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Select value={timeFilter} onValueChange={setTimeFilter}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="global">All Time</SelectItem>
-                  <SelectItem value="yearly">This Year</SelectItem>
-                  <SelectItem value="monthly">This Month</SelectItem>
-                  <SelectItem value="weekly">This Week</SelectItem>
-                  <SelectItem value="daily">Today</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={fetchAllLeaderboards}
-                disabled={refreshing}
-                className="gap-2 bg-transparent"
-              >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-                Refresh
-              </Button>
-            </div>
+      <Header />
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Leaderboards</h1>
+            <p className="text-muted-foreground">Compete with developers worldwide</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Select value={timeFilter} onValueChange={setTimeFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="global">All Time</SelectItem>
+                <SelectItem value="yearly">This Year</SelectItem>
+                <SelectItem value="monthly">This Month</SelectItem>
+                <SelectItem value="weekly">This Week</SelectItem>
+                <SelectItem value="daily">Today</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchAllLeaderboards}
+              disabled={refreshing}
+              className="gap-2 bg-transparent"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
           </div>
         </div>
       </div>

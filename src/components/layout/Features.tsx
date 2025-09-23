@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Card, CardContent } from '../ui'
-import { Trophy, Users, Star, GitBranch } from "lucide-react"
+import { Trophy, Users, Star, GitBranch, Search, Database, Zap, Github } from "lucide-react"
 
 const Features = () => {
 
@@ -8,26 +8,36 @@ const Features = () => {
         {
             icon: Trophy,
             title: "Dynamic Leaderboards",
-            description: "Compete on daily, weekly, monthly, and yearly contribution leaderboards",
+            description: "Compete on daily, weekly, monthly, and yearly contribution leaderboards with power levels and rankings",
         },
         {
             icon: Star,
             title: "Achievement Badges",
-            description: "Earn unique badges for milestones, streaks, and special accomplishments",
+            description: "Earn unique badges for milestones, streaks, and special accomplishments with rarity levels",
         },
         {
             icon: Users,
-            title: "Discord-Style Profiles",
-            description: "Rich, interactive profile cards with GitHub stats and achievements",
+            title: "Rich GitHub Profiles",
+            description: "Comprehensive profile cards with contribution graphs, stats, and detailed GitHub analytics",
         },
         {
             icon: GitBranch,
+            title: "Repository Discovery",
+            description: "Advanced search and filtering for GitHub repositories by language, topic, and license",
+        },
+        {
+            icon: Search,
             title: "Issue Explorer",
-            description: "Discover and filter GitHub issues across repositories and organizations",
+            description: "Discover and filter GitHub issues across repositories with advanced search capabilities",
+        },
+        {
+            icon: Database,
+            title: "Drizzle ORM Backend",
+            description: "Type-safe database operations with real-time analytics and background services",
         },
     ]
     return (
-        <section className="py-20">
+        <section className="py-10">
             <div className="container mx-auto px-4">
                 <div className="mb-16 text-center">
                     <h2 className="mb-4 text-3xl font-bold md:text-4xl">Game-Changing Features</h2>
@@ -36,7 +46,7 @@ const Features = () => {
                     </p>
                 </div>
 
-                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                     {features.map((feature, index) => (
                         <motion.div
                             key={feature.title}

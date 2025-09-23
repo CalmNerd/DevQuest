@@ -29,20 +29,24 @@ const Header = () => {
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -10 }}
-                            transition={{ duration: 0.2, ease: "easeInOut" }}
-                        >
+                            transition={{ duration: 0.2, ease: "easeInOut" }}>
+
                             <SidebarTrigger />
                         </motion.div>
-
-                        : (
-                            <div className="flex items-center gap-2">
-                                {/* <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                                    <Github className="h-5 w-5 text-primary-foreground" />
+                        : <div>
+                            {(pathname !== '/repositories') &&
+                                <div className="flex items-center gap-2 pl-8">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                                        <Github className="h-5 w-5 text-primary-foreground" />
+                                    </div>
+                                    <span className="text-xl font-bold text-foreground">DevQuest</span>
                                 </div>
-                                <span className="text-xl font-bold text-foreground">DevQuest</span> */}
-                            </div>)
+                            }
+                        </div>
                     }
-                    <div className="flex items-center gap-4 pr-2">
+
+
+                    <div className="flex items-center gap-4 pr-8">
                         <Button variant="ghost" asChild>
                             <Link href="/leaderboards">Leaderboards</Link>
                         </Button>

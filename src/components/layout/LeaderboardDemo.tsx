@@ -20,7 +20,7 @@ const LeaderboardDemo = () => {
         { rank: 5, username: "addyosmani", avatar: "/placeholder.svg?height=40&width=40", score: 1654, metric: "commits" },
     ]
     return (
-        <section className="py-20">
+        <section className="py-10">
             <div className="container mx-auto px-4">
                 <div className="mb-16 text-center">
                     <h2 className="mb-4 text-3xl font-bold md:text-4xl">Live Leaderboard</h2>
