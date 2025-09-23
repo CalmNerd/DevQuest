@@ -16,6 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
+  SidebarTrigger,
 } from '@/components/ui/sidebar'
 import {
   Home,
@@ -69,20 +70,27 @@ export default function RepositorySidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-2">
-          <Github className="h-6 w-6 text-primary" />
+        <div className="flex items-center gap-2 px-1 py-3">
+          <Link href="/" className='size-7'>
+            <Github className="" />
+          </Link>
           <AnimatePresence mode="wait">
             {state === "expanded" && (
-              <motion.span
+              <motion.div
                 key="header-text"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.2, ease: "easeInOut" }}
-                className="font-semibold"
-              >
-                Repositories
-              </motion.span>
+                className="w-full font-semibold flex items-center justify-between gap-2">
+                <Link href="/">
+                  <motion.span>
+                    DevQuest
+                  </motion.span>
+                </Link>
+                <SidebarTrigger />
+              </motion.div>
+
             )}
           </AnimatePresence>
         </div>
