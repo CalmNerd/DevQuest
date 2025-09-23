@@ -47,7 +47,6 @@ const WorldMap: React.FC<WorldMapProps> = ({
   // State for tracking animated elements
   const [animatedElements, setAnimatedElements] = useState<Set<number>>(new Set())
   const [elementColors, setElementColors] = useState<Map<number, string>>(new Map())
-  const [animationStartTimes, setAnimationStartTimes] = useState<Map<number, number>>(new Map())
   
   // Use refs to store current state to avoid stale closures
   const currentAnimatedRef = useRef(new Set<number>())
@@ -112,7 +111,6 @@ const WorldMap: React.FC<WorldMapProps> = ({
         // Update state
         setAnimatedElements(newAnimated)
         setElementColors(newColors)
-        setAnimationStartTimes(newStartTimes)
         
         lastUpdateTime = currentTime
       }
