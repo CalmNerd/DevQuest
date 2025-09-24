@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
-import { cn } from '@/lib/utils'
+import { cn, RAINBOW_COLORS } from '@/lib/utils'
 
 interface WorldMapProps {
   /** Width of the SVG element - can be a number (pixels) or string (CSS value) */
@@ -21,17 +21,6 @@ interface WorldMapProps {
   /** Animation duration in milliseconds */
   animationDuration?: number
 }
-
-// Rainbow colors array for the pulse animation
-const RAINBOW_COLORS = [
-  '#FF0000', // Red
-  '#FF7F00', // Orange
-  '#FFFF00', // Yellow
-  '#00FF00', // Green
-  '#0000FF', // Blue
-  '#4B0082', // Indigo
-  '#9400D3'  // Violet
-] as const
 
 const WorldMap: React.FC<WorldMapProps> = ({
   width = 2046,

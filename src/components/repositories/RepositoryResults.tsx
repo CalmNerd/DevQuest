@@ -31,7 +31,6 @@ export function RepositoryResults({
   repositories,
   loading,
   error,
-  searchQuery,
   pagination,
   onPageChange,
   emptyMessage = "No repositories found",
@@ -92,24 +91,19 @@ export function RepositoryResults({
               <Search className="h-5 w-5 text-primary" />
               Search Results
             </h3>
-            <Badge variant="secondary">
-              {repositories.length} found
-            </Badge>
+            {pagination && (
+              <Badge variant="secondary">
+                {pagination.total_count.toLocaleString()} repositories
+              </Badge>
+            )}
           </div>
-          {pagination && (
-            <p className="text-sm text-muted-foreground">
-              Showing {((pagination.current_page - 1) * pagination.per_page) + 1} to{' '}
-              {Math.min(pagination.current_page * pagination.per_page, pagination.total_count)} of{' '}
-              {pagination.total_count.toLocaleString()} repositories
-            </p>
-          )}
         </CardHeader>
         <CardContent>
           {/* Repository List */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="space-y-4"
+            className="grid grid-cols-2 gap-4"
           >
             {repositories.map((repo, index) => (
               <motion.div
@@ -123,51 +117,63 @@ export function RepositoryResults({
             ))}
           </motion.div>
 
-          {/* Pagination */}
-          {pagination && pagination.total_pages > 1 && onPageChange && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mt-6"
-            >
-              <div className="flex items-center justify-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onPageChange(pagination.current_page - 1)}
-                  disabled={!pagination.has_prev_page}
-                >
-                  Previous
-                </Button>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-6 flex items-center justify-between"
+          >
+            {pagination && (
+              <p className="text-sm text-muted-foreground">
+                Showing {((pagination.current_page - 1) * pagination.per_page) + 1} to{' '}
+                {Math.min(pagination.current_page * pagination.per_page, pagination.total_count)} of{' '}
+                {pagination.total_count.toLocaleString()} repositories
+              </p>
+            )}
+            {pagination && pagination.total_pages > 1 && onPageChange && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onPageChange(pagination.current_page - 1)}
+                    disabled={!pagination.has_prev_page}
+                  >
+                    Previous
+                  </Button>
 
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, pagination.total_pages) }, (_, i) => {
-                    const page = i + 1
-                    return (
-                      <Button
-                        key={page}
-                        variant={pagination.current_page === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => onPageChange(page)}
-                        className="w-10"
-                      >
-                        {page}
-                      </Button>
-                    )
-                  })}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, pagination.total_pages) }, (_, i) => {
+                      const page = i + 1
+                      return (
+                        <Button
+                          key={page}
+                          variant={pagination.current_page === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => onPageChange(page)}
+                          className="w-10"
+                        >
+                          {page}
+                        </Button>
+                      )
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onPageChange(pagination.current_page + 1)}
+                    disabled={!pagination.has_next_page}
+                  >
+                    Next
+                  </Button>
                 </div>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onPageChange(pagination.current_page + 1)}
-                  disabled={!pagination.has_next_page}
-                >
-                  Next
-                </Button>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
+          </motion.div>
+          {/* Pagination */}
         </CardContent>
       </Card>
     </div>

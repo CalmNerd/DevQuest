@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { SidebarTrigger } from '../ui/sidebar'
 import { useSidebar } from '../ui/sidebar'
-import { useContext } from 'react'
 import { motion } from 'framer-motion'
 
 // context error fix
@@ -24,7 +23,7 @@ const Header = () => {
         <nav className="w-full border-b border-border bg-card/50 sticky top-0 z-50 backdrop-blur-sm">
             <div className="px-2 py-4">
                 <div className="flex items-center justify-between">
-                    {(pathname === '/repositories' && sidebarContext?.state === "collapsed") ?
+                    {(pathname.startsWith('/repositories') && sidebarContext?.state === "collapsed") ?
                         <motion.div
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -34,7 +33,7 @@ const Header = () => {
                             <SidebarTrigger />
                         </motion.div>
                         : <div>
-                            {(pathname !== '/repositories') &&
+                            {(!pathname.startsWith('/repositories')) &&
                                 <div className="flex items-center gap-2 pl-8">
                                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                                         <Github className="h-5 w-5 text-primary-foreground" />
