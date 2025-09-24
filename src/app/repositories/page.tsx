@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Github, Zap, Code, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RepositorySearchForm } from '@/components/repositories/RepositorySearchForm'
 import { RepositoryResults } from '@/components/repositories/RepositoryResults'
@@ -71,20 +70,6 @@ export default function RepositoryHomePage() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">Repository Search</h1>
-            {pagination.total_count > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {pagination.total_count.toLocaleString()} repositories
-              </Badge>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
       <div className="flex-1 overflow-auto p-6">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -108,6 +93,7 @@ export default function RepositoryHomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
+            className='bg-card rounded-xl border'
           >
             <RepositorySearchForm
               searchQuery={searchQuery}
@@ -115,23 +101,22 @@ export default function RepositoryHomePage() {
               onSearch={handleSearch}
               loading={loading}
               placeholder="Search repositories by name, description, or topic..."
+              className='p-0 border-none'
             />
-          </motion.div>
-
-          {/* Quick Searches */}
+            {/* Quick Searches */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <Card>
+            <Card className='pt-0 border-none gap-1'>
               <CardHeader>
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Zap className="h-5 w-5 text-primary" />
                   Quick Searches
                 </h3>
               </CardHeader>
-              <CardContent>
+              <CardContent className='py-0'>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                   {quickSearches.map((search) => (
                     <Button
@@ -152,7 +137,8 @@ export default function RepositoryHomePage() {
               </CardContent>
             </Card>
           </motion.div>
-
+          </motion.div>
+          
           {/* Stats */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}

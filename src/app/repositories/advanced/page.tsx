@@ -1,10 +1,16 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Filter, Star, GitFork, Calendar, Clock, Code } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import { RepositorySearchForm } from '@/components/repositories/RepositorySearchForm'
 import { RepositoryResults } from '@/components/repositories/RepositoryResults'
 import { useRepositories } from '@/hooks/client'
@@ -26,6 +32,19 @@ export default function RepositoryAdvancedPage() {
   })
 
   const { repositories, loading, error, pagination, fetchRepositories } = useRepositories()
+
+  // deafultserach
+  useEffect(() => {
+    if (!searchQuery && repositories.length === 0) {
+      const defaultFilters = {
+        ...filters,
+        query: '',
+        page: 1
+      }
+      setFilters(defaultFilters)
+      fetchRepositories(defaultFilters)
+    }
+  }, [])
 
   const handleSearch = (query: string) => {
     const newFilters = {
@@ -58,20 +77,6 @@ export default function RepositoryAdvancedPage() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">Advanced Filters</h1>
-            {pagination.total_count > 0 && (
-              <span className="text-sm text-muted-foreground">
-                {pagination.total_count.toLocaleString()} repositories found
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
       <div className="flex-1 overflow-auto p-6">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -123,66 +128,56 @@ export default function RepositoryAdvancedPage() {
                 <CardContent className="space-y-4">
                   <div>
                     <label className="text-sm font-medium mb-2 block">Sort By</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant={filters.sort === 'stars' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleFilterChange('sort', 'stars')}
-                        className="gap-2"
-                      >
+                    <Select
+                      value={filters.sort}
+                      onValueChange={(value) => handleFilterChange('sort', value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select sort option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="stars">
+                          <div className="flex items-center gap-2">
                         <Star className="h-4 w-4" />
                         Stars
-                      </Button>
-                      <Button
-                        variant={filters.sort === 'forks' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleFilterChange('sort', 'forks')}
-                        className="gap-2"
-                      >
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="forks">
+                          <div className="flex items-center gap-2">
                         <GitFork className="h-4 w-4" />
                         Forks
-                      </Button>
-                      <Button
-                        variant={filters.sort === 'updated' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleFilterChange('sort', 'updated')}
-                        className="gap-2"
-                      >
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="updated">
+                          <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4" />
                         Updated
-                      </Button>
-                      <Button
-                        variant={filters.sort === 'created' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleFilterChange('sort', 'created')}
-                        className="gap-2"
-                      >
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="created">
+                          <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
                         Created
-                      </Button>
                     </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
                     <label className="text-sm font-medium mb-2 block">Order</label>
-                    <div className="flex gap-2">
-                      <Button
-                        variant={filters.order === 'desc' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleFilterChange('order', 'desc')}
-                        className="flex-1"
-                      >
-                        Descending
-                      </Button>
-                      <Button
-                        variant={filters.order === 'asc' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleFilterChange('order', 'asc')}
-                        className="flex-1"
-                      >
-                        Ascending
-                      </Button>
-                    </div>
+                    <Select
+                      value={filters.order}
+                      onValueChange={(value) => handleFilterChange('order', value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select order" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="desc">Descending</SelectItem>
+                        <SelectItem value="asc">Ascending</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </CardContent>
               </Card>
@@ -202,20 +197,30 @@ export default function RepositoryAdvancedPage() {
                   </h3>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-2">
-                    {popularLanguages.slice(0, 12).map((language) => (
-                      <Button
-                        key={language}
-                        variant={filters.language === language ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleFilterChange('language', filters.language === language ? undefined : language)}
-                        className="justify-start gap-2"
-                      >
+                  <Select
+                    value={filters.language || 'all'}
+                    onValueChange={(value) => handleFilterChange('language', value === 'all' ? undefined : value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select programming language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-gray-400" />
+                          All Languages
+                        </div>
+                      </SelectItem>
+                      {popularLanguages.map((language) => (
+                        <SelectItem key={language} value={language}>
+                          <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-primary" />
                         {language}
-                      </Button>
+                          </div>
+                        </SelectItem>
                     ))}
-                  </div>
+                    </SelectContent>
+                  </Select>
                 </CardContent>
               </Card>
             </motion.div>
@@ -235,36 +240,46 @@ export default function RepositoryAdvancedPage() {
                 </h3>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <Button
-                    variant={filters.stars === '>100' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleFilterChange('stars', filters.stars === '>100' ? undefined : '>100')}
-                  >
-                    &gt;100
-                  </Button>
-                  <Button
-                    variant={filters.stars === '>1000' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleFilterChange('stars', filters.stars === '>1000' ? undefined : '>1000')}
-                  >
-                    &gt;1K
-                  </Button>
-                  <Button
-                    variant={filters.stars === '>5000' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleFilterChange('stars', filters.stars === '>5000' ? undefined : '>5000')}
-                  >
-                    &gt;5K
-                  </Button>
-                  <Button
-                    variant={filters.stars === '>10000' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleFilterChange('stars', filters.stars === '>10000' ? undefined : '>10000')}
-                  >
-                    &gt;10K
-                  </Button>
+                <Select
+                  value={filters.stars || 'any'}
+                  onValueChange={(value) => handleFilterChange('stars', value === 'any' ? undefined : value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select minimum stars" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4" />
+                        Any Stars
+                      </div>
+                    </SelectItem>
+                    <SelectItem value=">100">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4" />
+                        More than 100 stars
+                      </div>
+                    </SelectItem>
+                    <SelectItem value=">1000">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4" />
+                        More than 1,000 stars
+                      </div>
+                    </SelectItem>
+                    <SelectItem value=">5000">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4" />
+                        More than 5,000 stars
+                      </div>
+                    </SelectItem>
+                    <SelectItem value=">10000">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4" />
+                        More than 10,000 stars
                 </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </CardContent>
             </Card>
           </motion.div>
