@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { TrendingRepository } from '@/types/github.types'
 
 interface TrendingFilters {
-  type: 'stars' | 'forks' | 'language' | 'all-time' | 'recently-created' | 'recently-updated'
-  period?: 'daily' | 'weekly' | 'monthly' | 'yearly' | '2024' | '2023' | '2022' | '2021' | '2020'
+  type: 'stars' | 'forks' | 'all-time'
+  period?: 'daily' | 'weekly' | 'monthly' | 'yearly' | '2024' | '2023' | '2022' | '2021' | '2020' | 'all-time'
   language?: string
   limit?: number
   page?: number
@@ -30,11 +30,6 @@ interface UseTrendingRepositoriesReturn extends UseTrendingRepositoriesState {
   reset: () => void
 }
 
-/**
- * Custom hook for managing trending repository data fetching
- * Provides loading states, error handling, and pagination
- * Removes mock data fallbacks and implements proper error states
- */
 export function useTrendingRepositories(initialFilters?: TrendingFilters): UseTrendingRepositoriesReturn {
   const [state, setState] = useState<UseTrendingRepositoriesState>({
     repositories: [],
@@ -55,30 +50,30 @@ export function useTrendingRepositories(initialFilters?: TrendingFilters): UseTr
     try {
       const params = new URLSearchParams({
         type: filters.type,
-        period: filters.period || 'weekly',
+        period: filters.period || 'all-time',
         limit: (filters.limit || 30).toString(),
         page: (filters.page || 1).toString()
       })
-      
-      if (filters.language && filters.type === 'language') {
+
+      if (filters.language) {
         params.append('language', filters.language)
       }
-      
-      if (filters.sort && filters.type === 'all-time') {
+
+      if (filters.sort) {
         params.append('sort', filters.sort)
       }
 
       const response = await fetch(`/api/repositories/trending?${params.toString()}`)
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
       }
 
       const data = await response.json()
-      
+
       const repositories = data.repositories || []
-      
+
       setState(prev => ({
         ...prev,
         repositories: repositories,

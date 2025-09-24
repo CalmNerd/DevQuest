@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import githubColors from "@/lib/github-colors.json"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -40,44 +41,77 @@ export const getTimeAgo = (dateString: string) => {
   }
 }
 
-export const formatIssueBody = (body: string) => {
-  if (!body) return ""
+export function formatMarkdownPreview(
+  text: string | null | undefined,
+  options?: {
+    maxLength?: number
+    codeBlockReplacement?: string
+  }
+): string {
+  if (!text) return "";
+
+  // Set default options
+  const maxLength = options?.maxLength ?? 200;
+  const codeBlockReplacement = options?.codeBlockReplacement ?? "[Code Block]";
+
+  let cleaned = text;
 
   // Remove HTML comments
-  let cleaned = body.replace(/<!--[\s\S]*?-->/g, '')
+  cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
 
   // Remove markdown headers (##, ###, etc.)
-  cleaned = cleaned.replace(/^#{1,6}\s+/gm, '')
+  cleaned = cleaned.replace(/^#{1,6}\s+/gm, '');
 
   // Remove markdown bold/italic formatting
-  cleaned = cleaned.replace(/\*\*(.*?)\*\*/g, '$1')
-  cleaned = cleaned.replace(/\*(.*?)\*/g, '$1')
+  cleaned = cleaned.replace(/\*\*(.*?)\*\*/g, '$1');
+  cleaned = cleaned.replace(/\*(.*?)\*/g, '$1');
 
   // Remove markdown code blocks
-  cleaned = cleaned.replace(/```[\s\S]*?```/g, '[Code Block]')
-  cleaned = cleaned.replace(/`([^`]+)`/g, '$1')
+  cleaned = cleaned.replace(/```[\s\S]*?```/g, codeBlockReplacement);
+  cleaned = cleaned.replace(/`([^`]+)`/g, '$1');
 
   // Remove markdown links but keep the text
-  cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+  cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
 
   // Remove markdown lists (-, *, +)
-  cleaned = cleaned.replace(/^[\s]*[-*+]\s+/gm, '• ')
+  cleaned = cleaned.replace(/^[\s]*[-*+]\s+/gm, '• ');
 
   // Remove excessive whitespace and newlines
-  cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n')
-  cleaned = cleaned.replace(/^\s+|\s+$/gm, '')
+  cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n');
+  cleaned = cleaned.replace(/^\s+|\s+$/gm, '');
 
-  // Remove auto-sync timestamps
-  cleaned = cleaned.replace(/Auto-synced.*$/gm, '')
-  cleaned = cleaned.replace(/Source:.*$/gm, '')
+  // Remove auto-sync timestamps and sources (for issues)
+  cleaned = cleaned.replace(/Auto-synced.*$/gm, '');
+  cleaned = cleaned.replace(/Source:.*$/gm, '');
 
   // Clean up remaining whitespace
-  cleaned = cleaned.trim()
+  cleaned = cleaned.trim();
 
   // Limit to reasonable length for preview
-  if (cleaned.length > 200) {
-    cleaned = cleaned.substring(0, 200) + '...'
+  if (cleaned.length > maxLength) {
+    cleaned = cleaned.substring(0, maxLength) + '...';
   }
 
-  return cleaned
+  return cleaned;
+}
+
+// Rainbow colors array
+export const RAINBOW_COLORS = [
+  '#FF0000', // Red
+  '#FF7F00', // Orange
+  '#FFFF00', // Yellow
+  '#00FF00', // Green
+  '#0000FF', // Blue
+  '#4B0082', // Indigo
+  '#9400D3'  // Violet
+] as const
+
+export const getLanguageColor = (language: string) => {
+  return (githubColors as any)[language] || "#6b7280"
+}
+
+export const formatSize = (size: number) => {
+  if (size < 1024) return `${size} KB`
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} MB`
+  return `${(size / (1024 * 1024)).toFixed(1)} GB`
 }

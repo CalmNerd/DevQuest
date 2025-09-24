@@ -1,4 +1,3 @@
-import axios from "axios"
 import {
   GitHubSearchResponse,
   GitHubSearchRepo,
@@ -6,10 +5,6 @@ import {
   TrendingRepository
 } from '@/types/github.types'
 
-/**
- * Service class for handling GitHub repository operations
- * Provides methods for searching repositories, fetching trending repos, and filtering
- */
 class RepositoryService {
   private baseUrl = "https://api.github.com"
   private token: string
@@ -56,9 +51,7 @@ class RepositoryService {
     return response.json()
   }
 
-  /**
-   * Builds GitHub search query from filters
-   */
+  // Builds GitHub search query from filters
   private buildSearchQuery(filters: RepositorySearchFilters): string {
     let query = filters.query || ""
 
@@ -137,9 +130,7 @@ class RepositoryService {
     return query.trim()
   }
 
-  /**
-   * Searches repositories using GitHub API
-   */
+  //  Searches repositories using GitHub API   
   async searchRepositories(filters: RepositorySearchFilters): Promise<GitHubSearchResponse & { headers: Headers }> {
     const query = this.buildSearchQuery(filters)
     const page = filters.page || 1
@@ -164,9 +155,7 @@ class RepositoryService {
     if (period === '2024' || period === '2023' || period === '2022' || period === '2021' || period === '2020') {
       // Individual year filter
       const year = parseInt(period)
-      const yearStart = new Date(year, 0, 1).toISOString().split('T')[0]
-      const yearEnd = new Date(year, 11, 31).toISOString().split('T')[0]
-      createdFilter = `>${yearStart} <${yearEnd}`
+      createdFilter = `${year}-01-01..${year}-12-31`
     } else {
       // Time period filters
       let since: string
@@ -200,9 +189,7 @@ class RepositoryService {
     }
 
     const response = await this.searchRepositories(filters)
-
-    console.log("resrfa", response)
-
+    
     // Transform to trending repositories with trend score
     return response.items.map((repo, index) => ({
       ...repo,
@@ -211,16 +198,14 @@ class RepositoryService {
     }))
   }
 
-  async getTrendingByForks(period: 'daily' | 'weekly' | 'monthly' | 'yearly' | '2024' | '2023' | '2022' | '2021' | '2020' = 'weekly', page: number = 1, limit: number = 100): Promise<TrendingRepository[]> {
+  async getTrendingByForks(period: 'daily' | 'weekly' | 'monthly' | 'yearly' | '2024' | '2023' | '2022' | '2021' | '2020' = 'weekly', page: number = 1, limit: number = 100, language?: string): Promise<TrendingRepository[]> {
     const now = new Date()
     let createdFilter: string
 
     if (period === '2024' || period === '2023' || period === '2022' || period === '2021' || period === '2020') {
       // Individual year filter
       const year = parseInt(period)
-      const yearStart = new Date(year, 0, 1).toISOString().split('T')[0]
-      const yearEnd = new Date(year, 11, 31).toISOString().split('T')[0]
-      createdFilter = `>${yearStart} <${yearEnd}`
+      createdFilter = `${year}-01-01..${year}-12-31`
     } else {
       // Time period filters
       let since: string
@@ -249,6 +234,7 @@ class RepositoryService {
       sort: 'forks',
       order: 'desc',
       created: createdFilter,
+      language: language,
       page: page,
       per_page: limit
     }
@@ -276,16 +262,14 @@ class RepositoryService {
   //   }, {} as Record<string, string>);
   // }
 
-  async getTrendingByStars(period: 'daily' | 'weekly' | 'monthly' | 'yearly' | '2024' | '2023' | '2022' | '2021' | '2020' = 'weekly', page: number = 1, limit: number = 100): Promise<TrendingRepository[]> {
+  async getTrendingByStars(period: 'daily' | 'weekly' | 'monthly' | 'yearly' | '2024' | '2023' | '2022' | '2021' | '2020' = 'weekly', page: number = 1, limit: number = 100, language?: string): Promise<TrendingRepository[]> {
     const now = new Date()
     let createdFilter: string
 
     if (period === '2024' || period === '2023' || period === '2022' || period === '2021' || period === '2020') {
       // Individual year filter
       const year = parseInt(period)
-      const yearStart = new Date(year, 0, 1).toISOString().split('T')[0]
-      const yearEnd = new Date(year, 11, 31).toISOString().split('T')[0]
-      createdFilter = `>${yearStart} <${yearEnd}`
+      createdFilter = `${year}-01-01..${year}-12-31`
     } else {
       // Time period filters
       let since: string
@@ -314,6 +298,7 @@ class RepositoryService {
       sort: 'stars',
       order: 'desc',
       created: createdFilter,
+      language: language,
       page: page,
       per_page: limit
     }
@@ -338,7 +323,8 @@ class RepositoryService {
 
   async getAllTimeTopRepositories(language?: string, sortBy: 'stars' | 'forks' | 'updated' | 'created' = 'stars', page: number = 1, limit: number = 100): Promise<GitHubSearchRepo[]> {
     const filters: RepositorySearchFilters = {
-      query: language ? `language:${language} in:name` : 'in:name',
+      query: '',
+      language: language,
       sort: sortBy,
       order: 'desc',
       page: page,

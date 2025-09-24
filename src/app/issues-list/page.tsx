@@ -31,7 +31,7 @@ import githubColors from "@/lib/github-colors.json"
 import Link from "next/link"
 import { GitHubIssue } from '@/types/github.types'
 import { commonLabels, popularLanguages } from '@/lib/constants'
-import { formatIssueBody, getTimeAgo } from "@/lib/utils"
+import { formatMarkdownPreview, getTimeAgo } from "@/lib/utils"
 import Header from "@/components/layout/Header"
 
 export default function ExplorePage() {
@@ -225,12 +225,12 @@ export default function ExplorePage() {
   }
 
   useEffect(() => {
-    fetchRealIssues(1) // Reset to page 1 when filters change
+    fetchRealIssues(1) // Reset to page 1
   }, [filters])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    fetchRealIssues(1) // Reset to page 1 when searching
+    fetchRealIssues(1) // Reset to page 1
   }
 
   const handlePageChange = (newPage: number) => {
@@ -271,7 +271,7 @@ export default function ExplorePage() {
               </div>
               <div className="flex gap-2">
                 <Select value={filters.state} onValueChange={(value) => setFilters({ ...filters, state: value })}>
-                  <SelectTrigger className="w-32 bg-transparent dark:bg-input/30">
+                  <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -433,7 +433,7 @@ export default function ExplorePage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className="transition-all hover:shadow-md py-0 hover:shadow-primary/10 h-full">
+                <Card className="transition-all hover:bg-muted/70 py-0 h-full">
                   <CardContent className="p-6 h-full flex flex-col">
                     <div className="flex gap-4 h-full">
                       {/* <div className="flex-shrink-0 pt-1">{getStateIcon(issue.state)}</div> */}
@@ -519,9 +519,9 @@ export default function ExplorePage() {
                           {issue.body && (
                             <p
                               className="text-sm text-muted-foreground line-clamp-2 h-full overflow-hidden break-words break-all leading-tight"
-                              title={formatIssueBody(issue.body)}
+                              title={formatMarkdownPreview(issue.body)}
                             >
-                              {formatIssueBody(issue.body)}
+                              {formatMarkdownPreview(issue.body)}
                             </p>
                           )}
                         </div>

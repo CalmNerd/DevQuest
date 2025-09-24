@@ -27,31 +27,16 @@ export async function GET(request: NextRequest) {
 
       switch (type) {
         case "stars":
-          repositories = await repositoryService.getTrendingByStars(period, page, limit)
+          repositories = await repositoryService.getTrendingByStars(period, page, limit, language)
           break
         case "forks":
-          repositories = await repositoryService.getTrendingByForks(period, page, limit)
-          break
-        case "language":
-          if (!language) {
-            return NextResponse.json(
-              { error: "Language parameter is required for language trending" },
-              { status: 400 }
-            )
-          }
-          repositories = await repositoryService.getTrendingByLanguage(language, period, page, limit)
+          repositories = await repositoryService.getTrendingByForks(period, page, limit, language)
           break
         case "all-time":
           repositories = await repositoryService.getAllTimeTopRepositories(language, sort, page, limit)
           break
-        case "recently-created":
-          repositories = await repositoryService.getRecentlyCreatedRepositories(language, page, limit)
-          break
-        case "recently-updated":
-          repositories = await repositoryService.getRecentlyUpdatedRepositories(language, page, limit)
-          break
         default:
-          repositories = await repositoryService.getTrendingByStars(period, page, limit)
+          repositories = await repositoryService.getTrendingByStars(period, page, limit, language)
       }
 
       // Sort by trend score if available
