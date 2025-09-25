@@ -100,209 +100,195 @@ export default function RepositoryAdvancedPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
+            className='space-y-6 max-w-6xl mx-auto'
           >
-            <RepositorySearchForm
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              onSearch={handleSearch}
-              loading={loading}
-              placeholder="Search repositories with advanced filters..."
-            />
-          </motion.div>
-
-          {/* Filter Options */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Sort & Order */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card>
-                <CardHeader>
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Star className="h-5 w-5 text-primary" />
-                    Sort & Order
-                  </h3>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Sort By</label>
-                    <Select
-                      value={filters.sort}
-                      onValueChange={(value) => handleFilterChange('sort', value)}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select sort option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="stars">
-                          <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4" />
-                        Stars
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="forks">
-                          <div className="flex items-center gap-2">
-                        <GitFork className="h-4 w-4" />
-                        Forks
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="updated">
-                          <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        Updated
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="created">
-                          <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        Created
-                    </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Order</label>
-                    <Select
-                      value={filters.order}
-                      onValueChange={(value) => handleFilterChange('order', value)}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select order" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="desc">Descending</SelectItem>
-                        <SelectItem value="asc">Ascending</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Language Filter */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card>
-                <CardHeader>
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Code className="h-5 w-5 text-primary" />
-                    Language
-                  </h3>
-                </CardHeader>
-                <CardContent>
-                  <Select
-                    value={filters.language || 'all'}
-                    onValueChange={(value) => handleFilterChange('language', value === 'all' ? undefined : value)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select programming language" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full bg-gray-400" />
-                          All Languages
-                        </div>
-                      </SelectItem>
-                      {popularLanguages.map((language) => (
-                        <SelectItem key={language} value={language}>
-                          <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-primary" />
-                        {language}
-                          </div>
-                        </SelectItem>
-                    ))}
-                    </SelectContent>
-                  </Select>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
-
-          {/* Stars Filter */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Card>
-              <CardHeader>
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Star className="h-5 w-5 text-primary" />
-                  Stars
-                </h3>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Select
-                  value={filters.stars || 'any'}
-                  onValueChange={(value) => handleFilterChange('stars', value === 'any' ? undefined : value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select minimum stars" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">
-                      <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4" />
-                        Any Stars
-                      </div>
-                    </SelectItem>
-                    <SelectItem value=">100">
-                      <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4" />
-                        More than 100 stars
-                      </div>
-                    </SelectItem>
-                    <SelectItem value=">1000">
-                      <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4" />
-                        More than 1,000 stars
-                      </div>
-                    </SelectItem>
-                    <SelectItem value=">5000">
-                      <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4" />
-                        More than 5,000 stars
-                      </div>
-                    </SelectItem>
-                    <SelectItem value=">10000">
-                      <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4" />
-                        More than 10,000 stars
-                </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Search Results */}
-          {(searchQuery || repositories.length > 0) && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <RepositoryResults
-                repositories={repositories}
-                loading={loading}
-                error={error}
+            <Card className='p-0 gap-0'>
+              <RepositorySearchForm
                 searchQuery={searchQuery}
-                pagination={pagination}
-                onPageChange={handlePageChange}
-                emptyMessage="No repositories found"
-                emptyDescription="Try adjusting your filters or search query to find repositories."
+                setSearchQuery={setSearchQuery}
+                onSearch={handleSearch}
+                loading={loading}
+                placeholder="Search repositories with advanced filters..."
+                className='py-0 border-none'
               />
-            </motion.div>
-          )}
+              {/* Filter Options */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Sort & Order */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Card className='pt-0 border-none'>
+                    <CardContent className="w-full flex gap-4">
+                      <div className='w-full'>
+                        <label className="text-sm font-medium mb-2 block">Sort By</label>
+                        <Select
+                          value={filters.sort}
+                          onValueChange={(value) => handleFilterChange('sort', value)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select sort option" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="stars">
+                              <div className="flex items-center gap-2">
+                                <Star className="h-4 w-4" />
+                                Stars
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="forks">
+                              <div className="flex items-center gap-2">
+                                <GitFork className="h-4 w-4" />
+                                Forks
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="updated">
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                Updated
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="created">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                Created
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className='w-full'>
+                        <label className="text-sm font-medium mb-2 block">Order</label>
+                        <Select
+                          value={filters.order}
+                          onValueChange={(value) => handleFilterChange('order', value)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select order" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="desc">Descending</SelectItem>
+                            <SelectItem value="asc">Ascending</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                {/* Language Filter */}
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <Card className='pt-0 border-none'>
+                    <CardContent className="w-full flex gap-4">
+                      <div className='w-full'>
+                        <label className="text-sm font-medium mb-2 block">Language</label>
+                        <Select
+                          value={filters.language || 'all'}
+                          onValueChange={(value) => handleFilterChange('language', value === 'all' ? undefined : value)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select programming language" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-gray-400" />
+                                All Languages
+                              </div>
+                            </SelectItem>
+                            {popularLanguages.map((language) => (
+                              <SelectItem key={language} value={language}>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-3 h-3 rounded-full bg-primary" />
+                                  {language}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {/* Stars Filter */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className='w-full'
+                      >
+                        <label className="text-sm font-medium mb-2 block">Stars</label>
+
+                        <Select
+                          value={filters.stars || 'any'}
+                          onValueChange={(value) => handleFilterChange('stars', value === 'any' ? undefined : value)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select minimum stars" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="any">
+                              <div className="flex items-center gap-2">
+                                <Star className="h-4 w-4" />
+                                Any Stars
+                              </div>
+                            </SelectItem>
+                            <SelectItem value=">100">
+                              <div className="flex items-center gap-2">
+                                <Star className="h-4 w-4" />
+                                More than 100 stars
+                              </div>
+                            </SelectItem>
+                            <SelectItem value=">1000">
+                              <div className="flex items-center gap-2">
+                                <Star className="h-4 w-4" />
+                                More than 1,000 stars
+                              </div>
+                            </SelectItem>
+                            <SelectItem value=">5000">
+                              <div className="flex items-center gap-2">
+                                <Star className="h-4 w-4" />
+                                More than 5,000 stars
+                              </div>
+                            </SelectItem>
+                            <SelectItem value=">10000">
+                              <div className="flex items-center gap-2">
+                                <Star className="h-4 w-4" />
+                                More than 10,000 stars
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </motion.div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </div>
+            </Card>
+            {/* Search Results */}
+            {(searchQuery || repositories.length > 0) && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <RepositoryResults
+                  repositories={repositories}
+                  loading={loading}
+                  error={error}
+                  searchQuery={searchQuery}
+                  pagination={pagination}
+                  onPageChange={handlePageChange}
+                  emptyMessage="No repositories found"
+                  emptyDescription="Try adjusting your filters or search query to find repositories."
+                />
+              </motion.div>
+            )}
+          </motion.div>
+
         </div>
       </div>
     </div>

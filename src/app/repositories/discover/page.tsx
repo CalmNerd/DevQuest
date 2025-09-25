@@ -270,7 +270,7 @@ export default function RepositoryDiscoverPage() {
               />
             </motion.div>
           )}
-        </div>
+        </div>  
       </div>
     </div>
   )
