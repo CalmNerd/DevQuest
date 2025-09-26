@@ -83,6 +83,7 @@ export const githubStats = pgTable("github_stats", {
   rareLanguageRepos: integer("rare_language_repos").default(0), // repos in rare languages
 
   lastFetchedAt: timestamp("last_fetched_at").defaultNow(),
+  lastIncrementalFetch: timestamp("last_incremental_fetch"), // Track last incremental fetch
   updatedAt: timestamp("updated_at").defaultNow(),
 })
 

@@ -14,7 +14,7 @@ import {
   type InsertLeaderboard,
 } from "./schema"
 import { db } from "../services/database/db-http.service"
-import { eq, and } from "drizzle-orm"
+import { eq, and, sql } from "drizzle-orm"
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -27,6 +27,8 @@ export interface IStorage {
   // GitHub stats operations
   getGithubStats(userId: string): Promise<GithubStats | undefined>
   upsertGithubStats(stats: InsertGithubStats): Promise<GithubStats>
+  getLastFetchTime(userId: string): Promise<Date | undefined>
+  shouldPerformIncrementalFetch(userId: string, maxAgeHours?: number): Promise<boolean>
 
   // Achievement operations
   getAllAchievements(): Promise<Achievement[]>
@@ -68,7 +70,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username))
+    // Make username lookup case-insensitive by using ilike
+    const [user] = await db.select().from(users).where(sql`LOWER(${users.username}) = LOWER(${username})`)
     return user
   }
 
@@ -95,6 +98,24 @@ export class DatabaseStorage implements IStorage {
       })
       .returning()
     return result
+  }
+
+  async getLastFetchTime(userId: string): Promise<Date | undefined> {
+    const [stats] = await db
+      .select({ lastFetchedAt: githubStats.lastFetchedAt })
+      .from(githubStats)
+      .where(eq(githubStats.userId, userId))
+    return stats?.lastFetchedAt ?? undefined
+  }
+
+  async shouldPerformIncrementalFetch(userId: string, maxAgeHours: number = 24): Promise<boolean> {
+    const lastFetch = await this.getLastFetchTime(userId)
+    if (!lastFetch) return false // No previous data, do full fetch
+    
+    const now = new Date()
+    const hoursSinceLastFetch = (now.getTime() - lastFetch.getTime()) / (1000 * 60 * 60)
+    
+    return hoursSinceLastFetch < maxAgeHours
   }
 
   // Achievement operations

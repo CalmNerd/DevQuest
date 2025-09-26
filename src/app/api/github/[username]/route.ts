@@ -29,9 +29,22 @@ export async function GET(request: NextRequest, { params }: { params: { username
     }
 
     try {
-      // Try to fetch enhanced stats
-      statsData = await githubService.fetchUserStats(username)
-      console.log(` Successfully fetched user stats for ${username}`)
+      // Check if user exists in database for incremental fetching
+      const existingUser = await storage.getUserByUsername(username)
+      const shouldIncremental = existingUser ? await storage.shouldPerformIncrementalFetch(existingUser.id, 24) : false
+      const lastFetchTime = existingUser ? await storage.getLastFetchTime(existingUser.id) : undefined
+
+      console.log(`User ${username}: ${shouldIncremental ? 'incremental' : 'full'} fetch (last fetch: ${lastFetchTime?.toISOString() || 'never'})`)
+
+      // Add request ID to track concurrent requests
+      const requestId = Math.random().toString(36).substring(7)
+      console.log(`[${requestId}] Starting fetch for ${username}`)
+
+      // Try to fetch enhanced stats with incremental logic
+      const startTime = Date.now()
+      statsData = await githubService.fetchUserStatsIncremental(username, lastFetchTime || undefined, shouldIncremental)
+      const fetchTime = Date.now() - startTime
+      console.log(`[${requestId}] Successfully fetched user stats for ${username} (${shouldIncremental ? 'incremental' : 'full'} fetch) in ${fetchTime}ms`)
     } catch (error) {
       console.error(` Failed to fetch user stats, using fallback:`, error)
       hasErrors = true
@@ -274,7 +287,7 @@ async function saveUserDataToDatabase(
 
     console.log(` Saved user profile for ${username}`)
 
-    // Upsert GitHub stats
+    // Upsert GitHub stats with incremental metadata
     await storage.upsertGithubStats({
       userId,
       dailyContributions: statsData.dailyContributions || 0,
@@ -310,6 +323,8 @@ async function saveUserDataToDatabase(
       languageCount: statsData.languageCount || 0,
       topLanguagePercentage: statsData.topLanguagePercentage || 0,
       rareLanguageRepos: statsData.rareLanguageRepos || 0,
+      // Incremental metadata
+      lastIncrementalFetch: statsData.isIncrementalFetch ? new Date() : undefined,
     })
 
     console.log(` Saved GitHub stats for ${username}`)

@@ -1,3 +1,5 @@
+import { storage } from "../../lib/storage"
+
 class GitHubService {
   private baseUrl = "https://api.github.com"
   private graphqlUrl = "https://api.github.com/graphql"
@@ -322,6 +324,200 @@ class GitHubService {
       console.warn("GraphQL failed, trying REST API fallback:", error)
       // Fall back to REST API if GraphQL fails
       return await this.fetchUserStatsWithREST(username)
+    }
+  }
+  
+  async fetchUserStatsIncremental(username: string, lastFetchTime?: Date, isIncremental: boolean = false) {
+    try {
+      if (isIncremental && lastFetchTime) {
+        console.log(`Performing incremental fetch for ${username} since ${lastFetchTime.toISOString()}`)
+        return await this.fetchUserStatsIncrementalWithGraphQL(username, lastFetchTime)
+      } else {
+        console.log(`Performing full fetch for ${username}`)
+        return await this.fetchUserStatsWithGraphQL(username)
+      }
+    } catch (error) {
+      console.warn("GraphQL failed, trying REST API fallback:", error)
+      // Fall back to REST API if GraphQL fails
+      return await this.fetchUserStatsWithREST(username)
+    }
+  }
+
+  
+    // Incremental GraphQL fetch - attempts to fetch only new data since last fetch
+    // Note: GitHub GraphQL API doesn't support direct since for contributions,
+    // so we'll use a hybrid approach with events API for recent activity
+   
+  private async fetchUserStatsIncrementalWithGraphQL(username: string, lastFetchTime: Date) {
+    try {
+      // For incremental fetching, we'll:
+      // 1. Get existing complete data from database
+      // 2. Fetch only new data since last fetch
+      // 3. Merge existing + new data for complete results
+
+      const sinceTime = lastFetchTime.toISOString()
+      
+      console.log(`Incremental fetch: Getting existing data and recent events since ${sinceTime}`)
+      
+      // Get existing complete data from database first
+      const existingUser = await storage.getUserByUsername(username)
+      if (!existingUser) {
+        throw new Error("User not found in database")
+      }
+      
+      const existingStats = await storage.getGithubStats(existingUser.id)
+      if (!existingStats) {
+        throw new Error("No existing stats found for user")
+      }
+      
+      console.log(`Incremental fetch: Found existing stats, fetching new data since ${sinceTime}`)
+      
+      // Fetch recent events for activity tracking (this is the main incremental part)
+      const recentEvents = await this.fetchUserEventsSince(username, sinceTime, 1, 100)
+      
+      // Get current user data to check for changes
+      const currentUserData = await this.fetchUserData(username)
+      
+      if (!currentUserData) {
+        throw new Error("User not found or data unavailable")
+      }
+
+      console.log(`Incremental fetch: Found ${recentEvents.length} recent events, merging with existing data`)
+
+      // Use existing data as base and update with new information
+      const followers = currentUserData.followers || existingStats.followers || 0
+      const following = currentUserData.following || existingStats.following || 0
+      const totalRepositories = currentUserData.public_repos || existingStats.totalRepositories || 0
+      
+      // For incremental fetch, we'll use existing comprehensive data and add recent activity
+      const totalStars = existingStats.totalStars || 0
+      const totalForks = existingStats.totalForks || 0
+      // Handle languageStats which might be stored as JSON string or object
+      let languageStats = {}
+      try {
+        if (existingStats.languageStats) {
+          languageStats = typeof existingStats.languageStats === 'string' 
+            ? JSON.parse(existingStats.languageStats) 
+            : existingStats.languageStats
+        }
+      } catch (error) {
+        console.warn('Error parsing languageStats:', error)
+        languageStats = {}
+      }
+      const reposWithStars = existingStats.reposWithStars || 0
+      const reposWithForks = existingStats.reposWithForks || 0
+
+      const topLanguage =
+        Object.entries(languageStats).sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0] || null
+      const languageCount = Object.keys(languageStats).length
+
+      // Calculate top language percentage from existing data
+      let topLanguagePercentage = existingStats.topLanguagePercentage || 0
+      if (topLanguage && languageStats[topLanguage as keyof typeof languageStats] && totalRepositories > 0) {
+        topLanguagePercentage = Math.round((languageStats[topLanguage as keyof typeof languageStats] / totalRepositories) * 100)
+      }
+
+      // Use existing comprehensive data (this is the key fix!)
+      const totalCommits = existingStats.totalCommits || 0
+      const meaningfulCommits = existingStats.meaningfulCommits || 0
+      const totalPullRequests = existingStats.totalPullRequests || 0
+      const mergedPullRequests = existingStats.mergedPullRequests || 0
+      const totalIssues = existingStats.totalIssues || 0
+      const closedIssues = existingStats.closedIssues || 0
+      const totalReviews = existingStats.totalReviews || 0
+      const externalContributors = existingStats.externalContributors || 0
+      const dependencyUsage = existingStats.dependencyUsage || 0
+      const rareLanguageRepos = existingStats.rareLanguageRepos || 0
+
+      // Use existing contribution data
+      const dailyContributions = existingStats.dailyContributions || 0
+      const weeklyContributions = existingStats.weeklyContributions || 0
+      const monthlyContributions = existingStats.monthlyContributions || 0
+      const yearlyContributions = existingStats.yearlyContributions || 0
+      const last365Contributions = existingStats.last365Contributions || 0
+      const thisYearContributions = existingStats.thisYearContributions || 0
+      const overallContributions = existingStats.overallContributions || 0
+
+      // Use existing streak data
+      const currentStreak = existingStats.currentStreak || 0
+      const longestStreak = existingStats.longestStreak || 0
+
+      // Use existing contribution graph - handle JSON parsing
+      let contributionGraph = { weeks: [], totalContributions: 0 }
+      try {
+        if (existingStats.contributionGraph) {
+          contributionGraph = typeof existingStats.contributionGraph === 'string' 
+            ? JSON.parse(existingStats.contributionGraph) 
+            : existingStats.contributionGraph
+        }
+      } catch (error) {
+        console.warn('Error parsing contributionGraph:', error)
+        contributionGraph = { weeks: [], totalContributions: 0 }
+      }
+
+      // Calculate recent activity bonus
+      const recentActivityScore = recentEvents.length
+
+      // Calculate points based on existing data + recent activity bonus
+      const points = Math.floor(
+        last365Contributions +
+        totalStars * 2 +
+        currentStreak * 5 +
+        totalRepositories * 3 +
+        mergedPullRequests * 10 +
+        closedIssues * 5 +
+        totalReviews * 3 +
+        meaningfulCommits * 2 +
+        recentActivityScore * 2 // Bonus for recent activity
+      )
+
+      // Add incremental metadata
+      const result = {
+        dailyContributions,
+        weeklyContributions,
+        monthlyContributions,
+        yearlyContributions,
+        last365Contributions,
+        thisYearContributions,
+        overallContributions,
+        points,
+        totalStars,
+        totalForks,
+        contributedTo: existingStats.contributedTo || 0,
+        totalRepositories,
+        followers,
+        following,
+        currentStreak,
+        longestStreak,
+        topLanguage,
+        topLanguagePercentage,
+        languageStats,
+        contributionGraph,
+        totalCommits,
+        meaningfulCommits,
+        totalPullRequests,
+        mergedPullRequests,
+        totalIssues,
+        closedIssues,
+        totalReviews,
+        externalContributors,
+        reposWithStars,
+        reposWithForks,
+        dependencyUsage,
+        languageCount,
+        rareLanguageRepos,
+        lastFetchedAt: new Date(),
+        // Incremental metadata
+        recentEventsCount: recentEvents.length,
+        isIncrementalFetch: true,
+        lastIncrementalFetch: new Date(),
+      }
+
+      console.log(`Incremental fetch completed for ${username}: ${recentEvents.length} recent events (${Date.now() - lastFetchTime.getTime()}ms since last fetch)`)
+      return result
+    } catch (error) {
+      console.error("Error in incremental GraphQL fetch:", error)
+      throw error
     }
   }
 
@@ -658,6 +854,23 @@ class GitHubService {
       return await this.makeRequest(url)
     } catch (error) {
       console.warn(`Failed to fetch events for ${username}:`, error)
+      return []
+    }
+  }
+
+  /**
+   * Fetch user events since a specific timestamp (incremental fetching)
+   * @param username - GitHub username
+   * @param since - ISO timestamp to fetch events since
+   * @param page - Page number for pagination
+   * @param perPage - Number of events per page
+   */
+  async fetchUserEventsSince(username: string, since: string, page = 1, perPage = 30) {
+    const url = `${this.baseUrl}/users/${username}/events/public?since=${since}&page=${page}&per_page=${perPage}`
+    try {
+      return await this.makeRequest(url)
+    } catch (error) {
+      console.warn(`Failed to fetch events since ${since} for ${username}:`, error)
       return []
     }
   }

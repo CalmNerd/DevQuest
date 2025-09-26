@@ -139,7 +139,7 @@ class BackgroundUpdateService {
   }
 
   /**
-   * Update data for a single user
+   * Update data for a single user with incremental fetching logic
    */
   private async updateUserData(user: any): Promise<"success" | "skipped"> {
     try {
@@ -150,9 +150,19 @@ class BackgroundUpdateService {
 
       console.log(`Updating data for user: ${user.username}`)
 
-      // Fetch latest GitHub data
+      // Check if we should perform incremental fetch
+      const shouldIncremental = await storage.shouldPerformIncrementalFetch(user.id, 24) // 24 hours max age
+      const lastFetchTime = await storage.getLastFetchTime(user.id)
+
+      console.log(`User ${user.username}: ${shouldIncremental ? 'incremental' : 'full'} fetch (last fetch: ${lastFetchTime?.toISOString() || 'never'})`)
+
+      // Fetch latest GitHub data with incremental logic
       const githubData = await githubService.fetchUserData(user.username)
-      const statsData = await githubService.fetchUserStats(user.username)
+      const statsData = await githubService.fetchUserStatsIncremental(
+        user.username, 
+        lastFetchTime || undefined, 
+        shouldIncremental
+      )
 
       // Update user profile if needed
       await storage.upsertUser({
@@ -171,10 +181,11 @@ class BackgroundUpdateService {
         githubCreatedAt: githubData.created_at ? new Date(githubData.created_at) : undefined,
       })
 
-      // Update GitHub stats
+      // Update GitHub stats with incremental metadata
       await storage.upsertGithubStats({
         userId: user.id,
         ...statsData,
+        lastIncrementalFetch: (statsData as any).isIncrementalFetch ? new Date() : undefined,
       })
 
       // Check for new achievements
@@ -183,7 +194,9 @@ class BackgroundUpdateService {
       // Update leaderboards
       await leaderboardService.updateUserLeaderboards(user.id, statsData)
 
-      console.log(`Successfully updated user: ${user.username}`)
+      const fetchType = (statsData as any).isIncrementalFetch ? 'incremental' : 'full'
+      const eventsCount = (statsData as any).recentEventsCount || 0
+      console.log(`Successfully updated user: ${user.username} (${fetchType} fetch, ${eventsCount} recent events)`)
       return "success"
     } catch (error) {
       console.error(`Error updating user ${user.username}:`, error)
