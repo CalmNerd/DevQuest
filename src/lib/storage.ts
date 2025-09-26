@@ -328,19 +328,57 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateLeaderboardEntry(entry: InsertLeaderboard): Promise<Leaderboard> {
-    const [result] = await db
-      .insert(leaderboards)
-      .values(entry)
-      .onConflictDoUpdate({
-        target: [leaderboards.userId, leaderboards.period, leaderboards.periodDate],
-        set: {
-          commits: entry.commits,
-          score: entry.score,
-          updatedAt: new Date(),
-        },
-      })
-      .returning()
-    return result
+    // Check if this is a session-based entry (has sessionId) or legacy entry
+    if (entry.sessionId) {
+      // New session-based leaderboard entry
+      const [result] = await db
+        .insert(leaderboards)
+        .values(entry)
+        .onConflictDoUpdate({
+          target: [leaderboards.userId, leaderboards.sessionId],
+          set: {
+            commits: entry.commits,
+            score: entry.score,
+            updatedAt: new Date(),
+          },
+        })
+        .returning()
+      return result
+    } else {
+      // Legacy leaderboard entry - use upsert approach
+      const existing = await db
+        .select()
+        .from(leaderboards)
+        .where(
+          and(
+            eq(leaderboards.userId, entry.userId),
+            eq(leaderboards.period, entry.period),
+            eq(leaderboards.periodDate, entry.periodDate)
+          )
+        )
+        .limit(1)
+
+      if (existing.length > 0) {
+        // Update existing entry
+        const [result] = await db
+          .update(leaderboards)
+          .set({
+            commits: entry.commits,
+            score: entry.score,
+            updatedAt: new Date(),
+          })
+          .where(eq(leaderboards.id, existing[0].id))
+          .returning()
+        return result
+      } else {
+        // Insert new entry
+        const [result] = await db
+          .insert(leaderboards)
+          .values(entry)
+          .returning()
+        return result
+      }
+    }
   }
 
   async getUserRank(userId: string, period: string): Promise<number | undefined> {

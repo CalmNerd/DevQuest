@@ -1,11 +1,6 @@
 import { storage } from "../../lib/storage"
 import { githubService } from "../external/github.service"
-import { leaderboardService } from "./leaderboard.service"
 
-/**
- * Background service for automatically updating user data and leaderboards
- * Runs every 5 minutes to keep data fresh without user interaction
- */
 class BackgroundUpdateService {
   private updateInterval: NodeJS.Timeout | null = null
   private isUpdating = false
@@ -13,9 +8,8 @@ class BackgroundUpdateService {
   private readonly BATCH_SIZE = Number.parseInt(process.env.BACKGROUND_UPDATE_BATCH_SIZE || "5") // Default: 5 users per batch
   private readonly BATCH_DELAY_MS = Number.parseInt(process.env.BACKGROUND_UPDATE_BATCH_DELAY_MS || "2000") // Default: 2 seconds between batches
 
-  /**
-   * Start the background update service
-   */
+  //  Start the background update service
+
   start(): void {
     if (this.updateInterval) {
       console.log("Background update service is already running")
@@ -33,9 +27,8 @@ class BackgroundUpdateService {
     }, this.UPDATE_INTERVAL_MS)
   }
 
-  /**
-   * Stop the background update service
-   */
+  //  Stop the background update service
+    
   stop(): void {
     if (this.updateInterval) {
       clearInterval(this.updateInterval)
@@ -44,9 +37,8 @@ class BackgroundUpdateService {
     }
   }
 
-  /**
-   * Trigger an immediate update (for manual control)
-   */
+  //  Trigger an immediate update (for manual control)
+    
   triggerUpdate(): void {
     if (this.isUpdating) {
       console.log("Update already in progress, cannot trigger another")
@@ -57,9 +49,8 @@ class BackgroundUpdateService {
     this.performUpdate()
   }
 
-  /**
-   * Perform the background update for all users
-   */
+  //  Perform the background update for all users
+    
   private async performUpdate(): Promise<void> {
     if (this.isUpdating) {
       console.log("Background update already in progress, skipping...")
@@ -125,9 +116,8 @@ class BackgroundUpdateService {
     }
   }
 
-  /**
-   * Get all users from the database
-   */
+  //  Get all users from the database
+    
   private async getAllUsers(): Promise<any[]> {
     try {
       // This method needs to be implemented in storage.ts
@@ -138,9 +128,7 @@ class BackgroundUpdateService {
     }
   }
 
-  /**
-   * Update data for a single user with incremental fetching logic
-   */
+  //  Update data for a single user with incremental fetching logic
   private async updateUserData(user: any): Promise<"success" | "skipped"> {
     try {
       if (!user.username) {
@@ -191,8 +179,8 @@ class BackgroundUpdateService {
       // Check for new achievements
       await storage.checkAndUnlockAchievements(user.id)
 
-      // Update leaderboards
-      await leaderboardService.updateUserLeaderboards(user.id, statsData)
+      // Update leaderboards for all active sessions
+      await this.updateUserLeaderboards(user.id, statsData)
 
       const fetchType = (statsData as any).isIncrementalFetch ? 'incremental' : 'full'
       const eventsCount = (statsData as any).recentEventsCount || 0
@@ -204,9 +192,7 @@ class BackgroundUpdateService {
     }
   }
 
-  /**
-   * Extract LinkedIn URL from text
-   */
+  //  Extract LinkedIn URL from text
   private extractLinkedInUrl(input?: string | null): string | undefined {
     if (!input) return undefined
     const patterns = [/https?:\/\/([\w.-]*\.)?linkedin\.com\/[\w\-/?=&#.%]+/i]
@@ -217,16 +203,12 @@ class BackgroundUpdateService {
     return undefined
   }
 
-  /**
-   * Utility function to add delay
-   */
+  //  Utility function to add delay
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
   }
 
-  /**
-   * Get service status
-   */
+  //  Get service status
   getStatus(): { isRunning: boolean; isUpdating: boolean; nextUpdateIn: number } {
     if (!this.updateInterval) {
       return { isRunning: false, isUpdating: false, nextUpdateIn: 0 }
@@ -244,9 +226,7 @@ class BackgroundUpdateService {
     }
   }
 
-  /**
-   * Get service configuration
-   */
+  //  Get service configuration
   getConfig(): {
     updateIntervalMs: number
     batchSize: number
@@ -261,6 +241,116 @@ class BackgroundUpdateService {
       updateIntervalSeconds: this.UPDATE_INTERVAL_MS / 1000,
       batchDelaySeconds: this.BATCH_DELAY_MS / 1000,
     }
+  }
+
+  //  Update leaderboards for a user across all active sessions
+  private async updateUserLeaderboards(userId: string, statsData: any): Promise<void> {
+    try {
+      // Get user's current stats
+      const userStats = await storage.getGithubStats(userId)
+      if (!userStats) {
+        console.log(`No stats found for user ${userId}, skipping leaderboard update`)
+        return
+      }
+
+      // Calculate commits for different periods
+      const commits = {
+        daily: userStats.dailyContributions || 0,
+        weekly: userStats.weeklyContributions || 0,
+        monthly: userStats.monthlyContributions || 0,
+        yearly: userStats.yearlyContributions || 0,
+        overall: userStats.overallContributions || 0,
+      }
+
+      // Calculate score based on points
+      const score = userStats.points || 0
+
+      // Update leaderboards for each session type
+      const sessionTypes = ['daily', 'weekly', 'monthly', 'yearly', 'overall'] as const
+      
+      for (const sessionType of sessionTypes) {
+        try {
+          // Get active session for this type
+          const activeSession = await this.getActiveSession(sessionType)
+          if (!activeSession) {
+            console.log(`No active ${sessionType} session found, skipping`)
+            continue
+          }
+
+          // Update leaderboard entry for this session
+          await storage.updateLeaderboardEntry({
+            userId,
+            sessionId: activeSession.id,
+            period: sessionType,
+            periodDate: this.getPeriodDate(sessionType, activeSession.startDate),
+            commits: commits[sessionType],
+            score: score,
+          })
+
+          console.log(`Updated ${sessionType} leaderboard for user ${userId}: ${commits[sessionType]} commits, ${score} score`)
+        } catch (error) {
+          console.error(`Error updating ${sessionType} leaderboard for user ${userId}:`, error)
+        }
+      }
+    } catch (error) {
+      console.error(`Error updating leaderboards for user ${userId}:`, error)
+    }
+  }
+
+//  Get active session for a specific type 
+  private async getActiveSession(sessionType: string): Promise<any | null> {
+    try {
+      const { db } = await import("../database/db-http.service")
+      const { leaderboardSessions } = await import("../../lib/schema")
+      const { eq, and } = await import("drizzle-orm")
+
+      const result = await db
+        .select()
+        .from(leaderboardSessions)
+        .where(
+          and(
+            eq(leaderboardSessions.sessionType, sessionType),
+            eq(leaderboardSessions.isActive, true)
+          )
+        )
+        .limit(1)
+
+      return result.length > 0 ? result[0] : null
+    } catch (error) {
+      console.error(`Error getting active session for ${sessionType}:`, error)
+      return null
+    }
+  }
+
+  //  Get period date for a session type
+  private getPeriodDate(sessionType: string, startDate: Date): string {
+    const date = new Date(startDate)
+    
+    switch (sessionType) {
+      case 'daily':
+        return date.toISOString().split('T')[0] // YYYY-MM-DD
+      case 'weekly':
+        const year = date.getFullYear()
+        const week = this.getWeekNumber(date)
+        return `${year}-W${week.toString().padStart(2, '0')}`
+      case 'monthly':
+        return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`
+      case 'yearly':
+        return date.getFullYear().toString()
+      case 'overall':
+        return 'all-time'
+      default:
+        return date.toISOString().split('T')[0]
+    }
+  }
+
+  //  Get week number for a date
+  private getWeekNumber(date: Date): number {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+    const dayNum = d.getUTCDay() || 7
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
   }
 }
 

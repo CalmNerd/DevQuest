@@ -9,15 +9,33 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface ServiceStatus {
   isRunning: boolean
-  isUpdating: boolean
-  nextUpdateIn: number
-  nextUpdateInSeconds: number
+  sessionService: {
+    isRunning: boolean
+    activeSessions: Array<{
+      type: string
+      sessionKey: string
+      startDate: string
+      endDate: string
+      nextUpdate: string | null
+    }>
+  }
+  backgroundService: {
+    isRunning: boolean
+    isUpdating: boolean
+    nextUpdateIn: number
+  }
 }
 
 interface ServiceConfig {
-  updateIntervalSeconds: number
-  batchSize: number
-  batchDelaySeconds: number
+  sessionService: {
+    sessionTypes: string[]
+    updateIntervals: Record<string, number>
+  }
+  backgroundService: {
+    updateIntervalMs: number
+    batchSize: number
+    batchDelayMs: number
+  }
 }
 
 interface BackgroundServiceData {
@@ -74,7 +92,7 @@ export default function BackgroundServiceAdmin() {
     }
   }
 
-  const performAction = async (action: string) => {
+  const performAction = async (action: string, sessionType?: string) => {
     setActionLoading(action)
     try {
       const response = await fetch("/api/background-service", {
@@ -82,7 +100,7 @@ export default function BackgroundServiceAdmin() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, sessionType }),
       })
       const result = await response.json()
       if (result.status === "success") {
@@ -206,29 +224,68 @@ export default function BackgroundServiceAdmin() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Service Status</CardTitle>
-                <CardDescription>Current state of the background service</CardDescription>
+                <CardTitle>Session Service Status</CardTitle>
+                <CardDescription>Current state of the session management service</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">Status:</span>
-                  <Badge variant={data.service.isRunning ? "default" : "secondary"}>
-                    {data.service.isRunning ? "Running" : "Stopped"}
+                  <Badge variant={data.service.sessionService.isRunning ? "default" : "secondary"}>
+                    {data.service.sessionService.isRunning ? "Running" : "Stopped"}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Active Sessions:</span>
+                  <span className="text-sm text-muted-foreground">
+                    {data.service.sessionService.activeSessions.length}
+                  </span>
+                </div>
+
+                {data.service.sessionService.activeSessions.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="font-medium text-sm">Active Sessions:</span>
+                    {data.service.sessionService.activeSessions.map((session, index) => (
+                      <div key={index} className="text-xs bg-muted p-2 rounded">
+                        <div className="font-medium">{session.type.toUpperCase()}</div>
+                        <div className="text-muted-foreground">{session.sessionKey}</div>
+                        {session.nextUpdate && (
+                          <div className="text-muted-foreground">
+                            Next: {new Date(session.nextUpdate).toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Background Service Status</CardTitle>
+                <CardDescription>Current state of the background data service</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Status:</span>
+                  <Badge variant={data.service.backgroundService.isRunning ? "default" : "secondary"}>
+                    {data.service.backgroundService.isRunning ? "Running" : "Stopped"}
                   </Badge>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="font-medium">Updating:</span>
-                  <Badge variant={data.service.isUpdating ? "destructive" : "outline"}>
-                    {data.service.isUpdating ? "In Progress" : "Idle"}
+                  <Badge variant={data.service.backgroundService.isUpdating ? "destructive" : "outline"}>
+                    {data.service.backgroundService.isUpdating ? "In Progress" : "Idle"}
                   </Badge>
                 </div>
 
-                {data.service.isRunning && (
+                {data.service.backgroundService.isRunning && (
                   <div className="flex items-center justify-between">
                     <span className="font-medium">Next Update:</span>
                     <span className="text-sm text-muted-foreground">
-                      {formatTime(data.service.nextUpdateIn)}
+                      {formatTime(data.service.backgroundService.nextUpdateIn)}
                     </span>
                   </div>
                 )}
@@ -262,68 +319,131 @@ export default function BackgroundServiceAdmin() {
 
         <TabsContent value="service" className="space-y-6">
           {/* Service Configuration */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Service Configuration</CardTitle>
-              <CardDescription>Current service settings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Update Interval:</span>
-                <span className="text-sm">{data.config.updateIntervalSeconds}s</span>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Session Service Configuration</CardTitle>
+                <CardDescription>Session management settings</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <span className="font-medium">Session Types:</span>
+                  <div className="flex flex-wrap gap-2">
+                    {data.config.sessionService.sessionTypes.map((type) => (
+                      <Badge key={type} variant="outline">
+                        {type}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
 
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Batch Size:</span>
-                <span className="text-sm">{data.config.batchSize} users</span>
-              </div>
+                <div className="space-y-2">
+                  <span className="font-medium">Update Intervals:</span>
+                  <div className="space-y-1">
+                    {Object.entries(data.config.sessionService.updateIntervals).map(([type, interval]) => (
+                      <div key={type} className="flex justify-between text-sm">
+                        <span className="capitalize">{type}:</span>
+                        <span className="text-muted-foreground">{interval} minutes</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Batch Delay:</span>
-                <span className="text-sm">{data.config.batchDelaySeconds}s</span>
-              </div>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Background Service Configuration</CardTitle>
+                <CardDescription>Data update settings</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Update Interval:</span>
+                  <span className="text-sm">{Math.round(data.config.backgroundService.updateIntervalMs / 1000)}s</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Batch Size:</span>
+                  <span className="text-sm">{data.config.backgroundService.batchSize} users</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Batch Delay:</span>
+                  <span className="text-sm">{Math.round(data.config.backgroundService.batchDelayMs / 1000)}s</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Actions */}
           <Card>
             <CardHeader>
               <CardTitle>Service Actions</CardTitle>
-              <CardDescription>Control the background service</CardDescription>
+              <CardDescription>Control the session background service</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-4">
-                <Button
-                  onClick={() => performAction("start")}
-                  disabled={data.service.isRunning || actionLoading === "start"}
-                  variant="default"
-                >
-                  {actionLoading === "start" ? "Starting..." : "Start Service"}
-                </Button>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-4">
+                  <Button
+                    onClick={() => performAction("start")}
+                    disabled={data.service.isRunning || actionLoading === "start"}
+                    variant="default"
+                  >
+                    {actionLoading === "start" ? "Starting..." : "Start Service"}
+                  </Button>
 
-                <Button
-                  onClick={() => performAction("stop")}
-                  disabled={!data.service.isRunning || actionLoading === "stop"}
-                  variant="destructive"
-                >
-                  {actionLoading === "stop" ? "Stopping..." : "Stop Service"}
-                </Button>
+                  <Button
+                    onClick={() => performAction("stop")}
+                    disabled={!data.service.isRunning || actionLoading === "stop"}
+                    variant="destructive"
+                  >
+                    {actionLoading === "stop" ? "Stopping..." : "Stop Service"}
+                  </Button>
 
-                <Button
-                  onClick={() => performAction("trigger")}
-                  disabled={actionLoading === "trigger"}
-                  variant="outline"
-                >
-                  {actionLoading === "trigger" ? "Triggering..." : "Trigger Update"}
-                </Button>
+                  <Button
+                    onClick={() => performAction("trigger")}
+                    disabled={actionLoading === "trigger"}
+                    variant="outline"
+                  >
+                    {actionLoading === "trigger" ? "Triggering..." : "Trigger All Sessions"}
+                  </Button>
 
-                <Button
-                  onClick={fetchStatus}
-                  disabled={loading}
-                  variant="outline"
-                >
-                  Refresh Status
-                </Button>
+                  <Button
+                    onClick={() => performAction("refresh")}
+                    disabled={actionLoading === "refresh"}
+                    variant="outline"
+                  >
+                    {actionLoading === "refresh" ? "Refreshing..." : "Force Refresh All Data"}
+                  </Button>
+
+                  <Button
+                    onClick={fetchStatus}
+                    disabled={loading}
+                    variant="outline"
+                  >
+                    Refresh Status
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h4 className="font-medium">Individual Session Controls</h4>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  {data.config.sessionService.sessionTypes.map((sessionType) => (
+                    <Button
+                      key={sessionType}
+                      onClick={() => performAction("trigger", sessionType)}
+                      disabled={actionLoading === `trigger-${sessionType}`}
+                      variant="outline"
+                      size="sm"
+                      className="capitalize"
+                    >
+                      {actionLoading === `trigger-${sessionType}` ? "Updating..." : `Update ${sessionType}`}
+                    </Button>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

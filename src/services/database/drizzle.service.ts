@@ -13,10 +13,8 @@ import {
 } from "../../lib/schema"
 import { eq, and, desc, asc, sql, count, max, sum } from "drizzle-orm"
 
-/**
- * Enhanced Database Service using Drizzle ORM best practices
- * Provides optimized queries and comprehensive data operations
- */
+//  Enhanced Database Service using Drizzle ORM best practices
+//  Provides optimized queries and comprehensive data operations
 export class DrizzleDatabaseService {
   
   // ==================== USER OPERATIONS ====================
@@ -441,35 +439,11 @@ export class DrizzleDatabaseService {
       .limit(limit)
   }
   
-  async updateLeaderboardEntry(entry: Partial<Leaderboard>): Promise<Leaderboard> {
-    if (!entry.userId || !entry.period || !entry.periodDate) {
-      throw new Error("userId, period, and periodDate are required for leaderboard entry")
-    }
-
-    const [result] = await db
-      .insert(leaderboards)
-      .values({
-        userId: entry.userId,
-        period: entry.period,
-        periodDate: entry.periodDate,
-        commits: entry.commits,
-        score: entry.score,
-        rank: entry.rank,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: [leaderboards.userId, leaderboards.period, leaderboards.periodDate],
-        set: {
-          commits: entry.commits,
-          score: entry.score,
-          rank: entry.rank,
-          updatedAt: new Date(),
-        },
-      })
-      .returning()
-    
-    return result
-  }
+  // Note: This method is deprecated in favor of the session-based leaderboard system
+  // async updateLeaderboardEntry(entry: Partial<Leaderboard>): Promise<Leaderboard> {
+  //   // This method is no longer used - leaderboard updates are handled by the session management service
+  //   throw new Error("This method is deprecated. Use session-based leaderboard system instead.")
+  // }
   
   async updateRanksForPeriod(period: string, periodDate: string): Promise<void> {
     await db.execute(sql`

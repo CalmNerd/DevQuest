@@ -58,13 +58,9 @@ class LeaderboardService {
             (stats.totalRepositories || 0) * 3
           : stats.points || 0
 
-      await storage.updateLeaderboardEntry({
-        userId,
-        period,
-        periodDate,
-        commits,
-        score,
-      })
+      // Note: Leaderboard updates are now handled by the session management service
+      // The session service will automatically update leaderboards for all active sessions
+      console.log(`Leaderboard updates handled by session management service for user ${userId}`)
     }
 
     await this.updateRanks()

@@ -2,7 +2,9 @@ import { type NextRequest, NextResponse } from "next/server"
 import { githubService } from "@/services/external/github.service"
 import { getPowerProgress } from "@/services/api/power-level.service"
 import { storage } from "@/lib/storage"
-import { leaderboardService } from "@/services/api/leaderboard.service"
+
+// Track ongoing requests to prevent duplicates
+const ongoingRequests = new Map<string, Promise<any>>()
 
 export async function GET(request: NextRequest, { params }: { params: { username: string } }) {
   try {
@@ -10,11 +12,20 @@ export async function GET(request: NextRequest, { params }: { params: { username
     const { searchParams } = new URL(request.url)
     const forceRefresh = searchParams.get("refresh") === "true"
 
+    // Check if there's already an ongoing request for this user
+    if (!forceRefresh && ongoingRequests.has(username)) {
+      console.log(` Request for ${username} already in progress, waiting...`)
+      const result = await ongoingRequests.get(username)
+      return NextResponse.json(result)
+    }
+
     console.log(` Fetching profile for username: ${username}`)
 
-    let githubData
-    let statsData
-    let hasErrors = false
+    // Create a promise for this request and store it
+    const requestPromise = (async () => {
+      let githubData
+      let statsData
+      let hasErrors = false
 
     try {
       // Try to fetch basic user data first
@@ -207,7 +218,19 @@ export async function GET(request: NextRequest, { params }: { params: { username
       console.error(` Failed to save data for ${username}:`, error)
     })
 
-    return NextResponse.json(profile)
+      return NextResponse.json(profile)
+    })()
+
+    // Store the promise and clean up when done
+    ongoingRequests.set(username, requestPromise)
+    
+    try {
+      const result = await requestPromise
+      return result
+    } finally {
+      // Clean up the ongoing request
+      ongoingRequests.delete(username)
+    }
   } catch (error) {
     console.error(` Error fetching GitHub profile:`, error)
 
@@ -251,10 +274,8 @@ function generateBasicAchievements(statsData: any, githubData: any, repos: any[]
   return achievements
 }
 
-/**
- * Save user data to database asynchronously
- * This function handles all database operations for user profiles
- */
+//  Save user data to database asynchronously
+//  This function handles all database operations for user profiles 
 async function saveUserDataToDatabase(
   username: string,
   githubData: any,
@@ -335,8 +356,8 @@ async function saveUserDataToDatabase(
       console.log(` Unlocked ${newAchievements.length} new achievements for ${username}`)
     }
 
-    // Update leaderboards
-    await leaderboardService.updateUserLeaderboards(userId, statsData)
+    // Update leaderboards for all active sessions
+    await updateUserLeaderboards(userId, statsData)
     console.log(` Updated leaderboards for ${username}`)
 
     console.log(` Successfully saved all data for ${username}`)
@@ -344,4 +365,114 @@ async function saveUserDataToDatabase(
     console.error(` Database save failed for ${username}:`, error)
     throw error
   }
+}
+
+//  Update leaderboards for a user across all active sessions
+async function updateUserLeaderboards(userId: string, statsData: any): Promise<void> {
+  try {
+    // Get user's current stats
+    const userStats = await storage.getGithubStats(userId)
+    if (!userStats) {
+      console.log(`No stats found for user ${userId}, skipping leaderboard update`)
+      return
+    }
+
+    // Calculate commits for different periods
+    const commits = {
+      daily: userStats.dailyContributions || 0,
+      weekly: userStats.weeklyContributions || 0,
+      monthly: userStats.monthlyContributions || 0,
+      yearly: userStats.yearlyContributions || 0,
+      overall: userStats.overallContributions || 0,
+    }
+
+    // Calculate score based on points
+    const score = userStats.points || 0
+
+    // Update leaderboards for each session type
+    const sessionTypes = ['daily', 'weekly', 'monthly', 'yearly', 'overall'] as const
+    
+    for (const sessionType of sessionTypes) {
+      try {
+        // Get active session for this type
+        const activeSession = await getActiveSession(sessionType)
+        if (!activeSession) {
+          console.log(`No active ${sessionType} session found, skipping`)
+          continue
+        }
+
+        // Update leaderboard entry for this session
+        await storage.updateLeaderboardEntry({
+          userId,
+          sessionId: activeSession.id,
+          period: sessionType,
+          periodDate: getPeriodDate(sessionType, activeSession.startDate),
+          commits: commits[sessionType],
+          score: score,
+        })
+
+        console.log(`Updated ${sessionType} leaderboard for user ${userId}: ${commits[sessionType]} commits, ${score} score`)
+      } catch (error) {
+        console.error(`Error updating ${sessionType} leaderboard for user ${userId}:`, error)
+      }
+    }
+  } catch (error) {
+    console.error(`Error updating leaderboards for user ${userId}:`, error)
+  }
+}
+
+//  Get active session for a specific type
+async function getActiveSession(sessionType: string): Promise<any | null> {
+  try {
+    const { db } = await import("@/services/database/db-http.service")
+    const { leaderboardSessions } = await import("@/lib/schema")
+    const { eq, and } = await import("drizzle-orm")
+
+    const result = await db
+      .select()
+      .from(leaderboardSessions)
+      .where(
+        and(
+          eq(leaderboardSessions.sessionType, sessionType),
+          eq(leaderboardSessions.isActive, true)
+        )
+      )
+      .limit(1)
+
+    return result.length > 0 ? result[0] : null
+  } catch (error) {
+    console.error(`Error getting active session for ${sessionType}:`, error)
+    return null
+  }
+}
+
+//  Get period date for a session type
+function getPeriodDate(sessionType: string, startDate: Date): string {
+  const date = new Date(startDate)
+  
+  switch (sessionType) {
+    case 'daily':
+      return date.toISOString().split('T')[0] // YYYY-MM-DD
+    case 'weekly':
+      const year = date.getFullYear()
+      const week = getWeekNumber(date)
+      return `${year}-W${week.toString().padStart(2, '0')}`
+    case 'monthly':
+      return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`
+    case 'yearly':
+      return date.getFullYear().toString()
+    case 'overall':
+      return 'all-time'
+    default:
+      return date.toISOString().split('T')[0]
+  }
+}
+
+//  Get week number for a date
+function getWeekNumber(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+  const dayNum = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
 }

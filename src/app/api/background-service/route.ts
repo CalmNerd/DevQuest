@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
-import { backgroundUpdateService } from '@/services/api/background.service'
+import { sessionBackgroundService } from '@/services/api/session-background.service'
 
 export async function GET(request: NextRequest) {
   try {
-    const status = backgroundUpdateService.getStatus()
-    const config = backgroundUpdateService.getConfig()
+    const status = sessionBackgroundService.getStatus()
+    const config = sessionBackgroundService.getConfig()
 
     return NextResponse.json({
       status: "success",
       service: {
         isRunning: status.isRunning,
-        isUpdating: status.isUpdating,
-        nextUpdateIn: status.nextUpdateIn,
-        nextUpdateInSeconds: Math.round(status.nextUpdateIn / 1000),
+        sessionService: status.sessionService,
+        backgroundService: status.backgroundService,
       },
       config: {
-        updateIntervalSeconds: config.updateIntervalSeconds,
-        batchSize: config.batchSize,
-        batchDelaySeconds: config.batchDelaySeconds,
+        sessionService: config.sessionService,
+        backgroundService: config.backgroundService,
       },
     })
   } catch (error) {
@@ -36,35 +34,50 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { action } = body
+    const { action, sessionType } = body
 
     switch (action) {
       case "start":
-        backgroundUpdateService.start()
+        await sessionBackgroundService.start()
         return NextResponse.json({
           status: "success",
-          message: "Background service started",
+          message: "Session background service started",
         })
 
       case "stop":
-        backgroundUpdateService.stop()
+        sessionBackgroundService.stop()
         return NextResponse.json({
           status: "success",
-          message: "Background service stopped",
+          message: "Session background service stopped",
         })
 
       case "trigger":
-        backgroundUpdateService.triggerUpdate()
+        if (sessionType) {
+          await sessionBackgroundService.triggerSessionUpdate(sessionType)
+          return NextResponse.json({
+            status: "success",
+            message: `Manual update triggered for ${sessionType} session`,
+          })
+        } else {
+          await sessionBackgroundService.triggerAllSessionsUpdate()
+          return NextResponse.json({
+            status: "success",
+            message: "Manual update triggered for all sessions",
+          })
+        }
+
+      case "refresh":
+        await sessionBackgroundService.forceRefreshAllData()
         return NextResponse.json({
           status: "success",
-          message: "Manual update triggered",
+          message: "Force refresh completed for all data and sessions",
         })
 
       default:
         return NextResponse.json(
           {
             status: "error",
-            message: "Invalid action. Use 'start', 'stop', or 'trigger'",
+            message: "Invalid action. Use 'start', 'stop', 'trigger', or 'refresh'",
           },
           { status: 400 }
         )

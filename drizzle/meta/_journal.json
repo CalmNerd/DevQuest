@@ -15,6 +15,13 @@
       "when": 1758894263935,
       "tag": "0001_brave_roxanne_simpson",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1758916978649,
+      "tag": "0002_happy_wilson_fisk",
+      "breakpoints": true
     }
   ]
 }

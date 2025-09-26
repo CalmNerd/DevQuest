@@ -65,7 +65,7 @@ export default function LeaderboardsPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [activeTab, setActiveTab] = useState("points")
-  const [timeFilter, setTimeFilter] = useState("global")
+  const [timeFilter, setTimeFilter] = useState("overall")
   const [loadingMore, setLoadingMore] = useState<{ [key: string]: boolean }>({})
 
   const leaderboardTypes = [
@@ -79,7 +79,8 @@ export default function LeaderboardsPage() {
 
   const fetchLeaderboard = async (type: string, page: number = 1, append: boolean = false) => {
     try {
-      const response = await fetch(`/api/leaderboards?type=${type}&period=${timeFilter}&page=${page}&limit=30`)
+      // Use session-based leaderboards for better data
+      const response = await fetch(`/api/session-leaderboards?type=${type}&sessionType=${timeFilter}&page=${page}&limit=30`)
       if (response.ok) {
         const data = await response.json()
 
@@ -193,7 +194,7 @@ export default function LeaderboardsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="global">All Time</SelectItem>
+                <SelectItem value="overall">All Time</SelectItem>
                 <SelectItem value="yearly">This Year</SelectItem>
                 <SelectItem value="monthly">This Month</SelectItem>
                 <SelectItem value="weekly">This Week</SelectItem>

@@ -1,4 +1,4 @@
-import { index, jsonb, pgTable, timestamp, uniqueIndex, varchar, integer, text, serial } from "drizzle-orm/pg-core"
+import { index, jsonb, pgTable, timestamp, uniqueIndex, varchar, integer, text, serial, boolean } from "drizzle-orm/pg-core"
 import { createInsertSchema } from "drizzle-zod"
 import { relations } from "drizzle-orm"
 
@@ -115,6 +115,29 @@ export const userAchievements = pgTable("user_achievements", {
   maxProgress: integer("max_progress").default(1), // Target progress needed
 })
 
+// Leaderboard sessions table for managing contest-like sessions
+export const leaderboardSessions = pgTable(
+  "leaderboard_sessions",
+  {
+    id: serial("id").primaryKey(),
+    sessionType: varchar("session_type").notNull(), // daily, weekly, monthly, yearly, overall
+    sessionKey: varchar("session_key").notNull(), // unique identifier for the session
+    startDate: timestamp("start_date").notNull(),
+    endDate: timestamp("end_date").notNull(),
+    isActive: boolean("is_active").default(true),
+    updateIntervalMinutes: integer("update_interval_minutes").notNull(), // 5, 360, 720, 1440, 10080
+    lastUpdateAt: timestamp("last_update_at"),
+    nextUpdateAt: timestamp("next_update_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("idx_session_type_active").on(table.sessionType, table.isActive),
+    index("idx_session_dates").on(table.startDate, table.endDate),
+    uniqueIndex("idx_session_key").on(table.sessionKey),
+  ],
+)
+
 // Leaderboards table for tracking different leaderboard periods
 export const leaderboards = pgTable(
   "leaderboards",
@@ -123,6 +146,9 @@ export const leaderboards = pgTable(
     userId: varchar("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    sessionId: integer("session_id")
+      .notNull()
+      .references(() => leaderboardSessions.id, { onDelete: "cascade" }),
     period: varchar("period").notNull(), // daily, weekly, monthly, yearly, overall
     periodDate: varchar("period_date").notNull(), // YYYY-MM-DD for daily, YYYY-WW for weekly, etc.
     commits: integer("commits").default(0),
@@ -134,7 +160,8 @@ export const leaderboards = pgTable(
   (table) => [
     index("idx_leaderboard_period_date").on(table.period, table.periodDate),
     index("idx_leaderboard_rank").on(table.rank),
-    uniqueIndex("idx_leaderboard_user_period_date").on(table.userId, table.period, table.periodDate),
+    index("idx_leaderboard_session").on(table.sessionId),
+    uniqueIndex("idx_leaderboard_user_session").on(table.userId, table.sessionId),
   ],
 )
 
@@ -167,10 +194,18 @@ export const userAchievementsRelations = relations(userAchievements, ({ one }) =
   }),
 }))
 
+export const leaderboardSessionsRelations = relations(leaderboardSessions, ({ many }) => ({
+  leaderboardEntries: many(leaderboards),
+}))
+
 export const leaderboardsRelations = relations(leaderboards, ({ one }) => ({
   user: one(users, {
     fields: [leaderboards.userId],
     references: [users.id],
+  }),
+  session: one(leaderboardSessions, {
+    fields: [leaderboards.sessionId],
+    references: [leaderboardSessions.id],
   }),
 }))
 
@@ -207,6 +242,12 @@ export const insertLeaderboardSchema = createInsertSchema(leaderboards).omit({
   updatedAt: true,
 })
 
+export const insertLeaderboardSessionSchema = createInsertSchema(leaderboardSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+})
+
 // Types
 export type UpsertUser = typeof users.$inferInsert
 export type User = typeof users.$inferSelect
@@ -218,3 +259,5 @@ export type UserAchievement = typeof userAchievements.$inferSelect
 export type InsertUserAchievement = typeof userAchievements.$inferInsert
 export type Leaderboard = typeof leaderboards.$inferSelect
 export type InsertLeaderboard = typeof leaderboards.$inferInsert
+export type LeaderboardSession = typeof leaderboardSessions.$inferSelect
+export type InsertLeaderboardSession = typeof leaderboardSessions.$inferInsert

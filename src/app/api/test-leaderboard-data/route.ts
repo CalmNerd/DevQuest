@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { drizzleDb } from '@/services/database/drizzle.service'
-import { leaderboardService } from '@/services/api/leaderboard.service'
 
 export async function POST() {
   try {
@@ -157,10 +156,8 @@ export async function POST() {
     }
 
     // Update leaderboards
-    console.log("[Test Data] Updating leaderboards...")
-    for (const stats of testStats) {
-      await leaderboardService.updateUserLeaderboards(stats.userId, stats)
-    }
+    console.log("[Test Data] Leaderboard updates handled by session management service")
+    // Note: Leaderboard updates are now handled by the session management service
 
     console.log("[Test Data] Test data created successfully!")
 
