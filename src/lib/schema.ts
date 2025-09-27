@@ -1,4 +1,5 @@
 import { index, jsonb, pgTable, timestamp, uniqueIndex, varchar, integer, text, serial, boolean } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
 import { createInsertSchema } from "drizzle-zod"
 import { relations } from "drizzle-orm"
 
@@ -8,7 +9,7 @@ export const sessions = pgTable(
   {
     sid: varchar("sid").primaryKey(),
     sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
+    expire: timestamp("expire", { withTimezone: true }).notNull(),
   },
   (table) => [index("IDX_session_expire").on(table.expire)],
 )
@@ -30,9 +31,9 @@ export const users = pgTable("users", {
   linkedinUrl: varchar("linkedin_url"),
   twitterUsername: varchar("twitter_username"),
   location: varchar("location"),
-  githubCreatedAt: timestamp("github_created_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  githubCreatedAt: timestamp("github_created_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 })
 
 // Enhanced GitHub stats table for storing comprehensive user statistics
@@ -82,9 +83,9 @@ export const githubStats = pgTable("github_stats", {
   topLanguagePercentage: integer("top_language_percentage").default(0), // % of contributions in top language
   rareLanguageRepos: integer("rare_language_repos").default(0), // repos in rare languages
 
-  lastFetchedAt: timestamp("last_fetched_at").defaultNow(),
-  lastIncrementalFetch: timestamp("last_incremental_fetch"), // Track last incremental fetch
-  updatedAt: timestamp("updated_at").defaultNow(),
+  lastFetchedAt: timestamp("last_fetched_at", { withTimezone: true }).defaultNow(),
+  lastIncrementalFetch: timestamp("last_incremental_fetch", { withTimezone: true }), // Track last incremental fetch
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 })
 
 // Enhanced achievements table for defining available achievements with tiers
@@ -98,7 +99,7 @@ export const achievements = pgTable("achievements", {
   tier: varchar("tier").notNull().default("bronze"), // bronze, silver, gold, legendary
   criteria: jsonb("criteria").notNull(), // JSON object defining unlock criteria
   points: integer("points").default(0), // Points awarded for unlocking this achievement
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 })
 
 // User achievements table for tracking unlocked achievements
@@ -110,7 +111,7 @@ export const userAchievements = pgTable("user_achievements", {
   achievementId: integer("achievement_id")
     .notNull()
     .references(() => achievements.id, { onDelete: "cascade" }),
-  unlockedAt: timestamp("unlocked_at").defaultNow(),
+  unlockedAt: timestamp("unlocked_at", { withTimezone: true }).defaultNow(),
   progress: integer("progress").default(0), // Current progress towards achievement
   maxProgress: integer("max_progress").default(1), // Target progress needed
 })
@@ -122,14 +123,14 @@ export const leaderboardSessions = pgTable(
     id: serial("id").primaryKey(),
     sessionType: varchar("session_type").notNull(), // daily, weekly, monthly, yearly, overall
     sessionKey: varchar("session_key").notNull(), // unique identifier for the session
-    startDate: timestamp("start_date").notNull(),
-    endDate: timestamp("end_date").notNull(),
+    startDate: timestamp("start_date", { withTimezone: true }).notNull(),
+    endDate: timestamp("end_date", { withTimezone: true }).notNull(),
     isActive: boolean("is_active").default(true),
     updateIntervalMinutes: integer("update_interval_minutes").notNull(), // 5, 360, 720, 1440, 10080
-    lastUpdateAt: timestamp("last_update_at"),
-    nextUpdateAt: timestamp("next_update_at"),
-    createdAt: timestamp("created_at").defaultNow(),
-    updatedAt: timestamp("updated_at").defaultNow(),
+    lastUpdateAt: timestamp("last_update_at", { withTimezone: true }),
+    nextUpdateAt: timestamp("next_update_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
   (table) => [
     index("idx_session_type_active").on(table.sessionType, table.isActive),
@@ -154,8 +155,8 @@ export const leaderboards = pgTable(
     commits: integer("commits").default(0),
     score: integer("score").default(0), // Points used for power level (not for ranking)
     rank: integer("rank"),
-    createdAt: timestamp("created_at").defaultNow(),
-    updatedAt: timestamp("updated_at").defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
   (table) => [
     index("idx_leaderboard_period_date").on(table.period, table.periodDate),

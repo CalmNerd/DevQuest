@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ProfileCardTrigger } from '@/components/features/discord-profile-card'
 import { getPowerLevelFromPoints } from '@/lib/utils'
 import Header from "@/components/layout/Header"
+import { formatDateOnly, formatSessionDate } from "@/lib/date-formatter"
 
 interface LeaderboardEntry {
   rank: number
@@ -49,6 +50,15 @@ interface LeaderboardData {
   type: string
   period: string
   entries: LeaderboardEntry[]
+  sessionInfo?: {
+    sessionKey: string
+    sessionType: string
+    startDate: string
+    endDate: string
+    isActive: boolean
+    lastUpdateAt?: string
+    nextUpdateAt?: string
+  }
   pagination: {
     currentPage: number
     totalPages: number
@@ -84,19 +94,31 @@ export default function LeaderboardsPage() {
       if (response.ok) {
         const data = await response.json()
 
+        // Extract pagination from headers
+        const paginationHeader = response.headers.get('X-Pagination')
+        const pagination = paginationHeader ? JSON.parse(paginationHeader) : null
+
         if (append && leaderboards[type]) {
           // Append new results to existing ones
-          const updatedEntries = [...leaderboards[type].entries, ...data.entries]
+          const updatedEntries = [...(leaderboards[type].entries || []), ...(data.data?.entries || [])]
           setLeaderboards((prev) => ({
             ...prev,
             [type]: {
-              ...data,
-              entries: updatedEntries
+              ...data.data,
+              entries: updatedEntries,
+              pagination: pagination
             }
           }))
         } else {
-          // Replace with new results
-          setLeaderboards((prev) => ({ ...prev, [type]: data }))
+          // Replace with new results - transform API response to expected format
+          setLeaderboards((prev) => ({
+            ...prev,
+            [type]: {
+              ...data.data,
+              entries: data.data?.entries || [],
+              pagination: pagination
+            }
+          }))
         }
       } else {
         console.error(`Failed to fetch ${type} leaderboard:`, response.statusText)
@@ -118,11 +140,11 @@ export default function LeaderboardsPage() {
 
   const handleLoadMore = async (type: string) => {
     const currentData = leaderboards[type]
-    if (!currentData || !currentData.pagination.hasNextPage) return
+    if (!currentData || !currentData.pagination?.hasNextPage) return
 
     setLoadingMore((prev) => ({ ...prev, [type]: true }))
 
-    const nextPage = currentData.pagination.currentPage + 1
+    const nextPage = (currentData.pagination?.currentPage || 0) + 1
     await fetchLeaderboard(type, nextPage, true)
 
     setLoadingMore((prev) => ({ ...prev, [type]: false }))
@@ -166,7 +188,29 @@ export default function LeaderboardsPage() {
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Unknown"
-    return new Date(dateString).toLocaleDateString()
+    return formatDateOnly(dateString)
+  }
+
+  const formatSessionDateLocal = (dateString?: string) => {
+    if (!dateString) return "Unknown"
+    return formatSessionDate(dateString)
+  }
+
+  const getSessionTimeRemaining = (endDate?: string) => {
+    if (!endDate) return null
+    const now = new Date()
+    const end = new Date(endDate)
+    const diff = end.getTime() - now.getTime()
+
+    if (diff <= 0) return "Session ended"
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+
+    if (days > 0) return `${days}d ${hours}h remaining`
+    if (hours > 0) return `${hours}h ${minutes}m remaining`
+    return `${minutes}m remaining`
   }
 
   const formatNumber = (num?: number) => {
@@ -186,21 +230,26 @@ export default function LeaderboardsPage() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold">Leaderboards</h1>
-            <p className="text-muted-foreground">Compete with developers worldwide</p>
+            <p className="text-muted-foreground">
+              Compete with developers worldwide • {timeFilter === 'overall' ? 'All Time Rankings' : `${timeFilter.charAt(0).toUpperCase() + timeFilter.slice(1)} Rankings`}
+            </p>
           </div>
           <div className="flex items-center gap-4">
-            <Select value={timeFilter} onValueChange={setTimeFilter}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="overall">All Time</SelectItem>
-                <SelectItem value="yearly">This Year</SelectItem>
-                <SelectItem value="monthly">This Month</SelectItem>
-                <SelectItem value="weekly">This Week</SelectItem>
-                <SelectItem value="daily">Today</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Time Range:</span>
+              <Select value={timeFilter} onValueChange={setTimeFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="overall">All Time</SelectItem>
+                  <SelectItem value="yearly">This Year</SelectItem>
+                  <SelectItem value="monthly">This Month</SelectItem>
+                  <SelectItem value="weekly">This Week</SelectItem>
+                  <SelectItem value="daily">Today</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -234,8 +283,47 @@ export default function LeaderboardsPage() {
                   <div className="flex items-center justify-center py-12">
                     <RefreshCw className="h-8 w-8 animate-spin text-primary" />
                   </div>
-                ) : currentLeaderboard?.entries.length > 0 ? (
+                ) : currentLeaderboard?.entries?.length > 0 ? (
                   <>
+                    {/* Session Information Banner */}
+                    {currentLeaderboard.sessionInfo && (
+                      <Card className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-blue-200 dark:border-blue-800">
+                        <CardContent className="p-4">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-blue-600" />
+                              <span className="font-semibold text-blue-900 dark:text-blue-100">
+                                {currentLeaderboard.sessionInfo.sessionType.charAt(0).toUpperCase() + currentLeaderboard.sessionInfo.sessionType.slice(1)} Session
+                              </span>
+                              <Badge variant="outline" className="text-xs">
+                                {currentLeaderboard.sessionInfo.sessionKey}
+                              </Badge>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">Started: </span>
+                                <span className="font-medium">{formatSessionDateLocal(currentLeaderboard.sessionInfo.startDate)}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Ends: </span>
+                                <span className="font-medium">{formatSessionDateLocal(currentLeaderboard.sessionInfo.endDate)}</span>
+                              </div>
+                              <div className="md:col-span-2">
+                                <span className="text-muted-foreground">Time remaining: </span>
+                                <span className="font-medium text-green-600 dark:text-green-400">
+                                  {getSessionTimeRemaining(currentLeaderboard.sessionInfo.endDate)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="mt-2 text-xs text-muted-foreground bg-blue-100 dark:bg-blue-900/30 p-2 rounded">
+                              <strong>Note:</strong> All times are displayed in UTC to ensure fair competition worldwide.
+                              Sessions follow strict UTC boundaries regardless of your local timezone.
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
                     {/* Top 3 Podium */}
                     <Card className="mb-8">
                       <CardHeader>
@@ -247,7 +335,7 @@ export default function LeaderboardsPage() {
                       </CardHeader>
                       <CardContent>
                         <div className="grid gap-4 md:grid-cols-3">
-                          {currentLeaderboard.entries.slice(0, 3).map((entry, index) => (
+                          {currentLeaderboard.entries?.slice(0, 3).map((entry, index) => (
                             <motion.div
                               key={entry.username}
                               initial={{ opacity: 0, y: 20 }}
@@ -304,14 +392,14 @@ export default function LeaderboardsPage() {
                           Full Rankings - {type.label}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">
-                          {currentLeaderboard.pagination.totalCount} total developers •
+                          {currentLeaderboard.pagination?.totalCount || 0} total developers •
                           Last updated: {formatDate(currentLeaderboard.lastUpdated)}
                         </p>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-2">
                           <AnimatePresence>
-                            {currentLeaderboard.entries.map((entry, index) => (
+                            {currentLeaderboard.entries?.map((entry, index) => (
                               <motion.div
                                 key={entry.username}
                                 initial={{ opacity: 0, x: -20 }}
@@ -401,7 +489,7 @@ export default function LeaderboardsPage() {
                           </AnimatePresence>
                         </div>
 
-                        {currentLeaderboard.entries.length === 0 && (
+                        {currentLeaderboard.entries?.length === 0 && (
                           <div className="py-12 text-center text-muted-foreground">
                             <Trophy className="mx-auto mb-4 h-12 w-12" />
                             <p>No rankings available yet.</p>
@@ -410,7 +498,7 @@ export default function LeaderboardsPage() {
                         )}
 
                         {/* Load More Button */}
-                        {currentLeaderboard.pagination && currentLeaderboard.pagination.hasNextPage && (
+                        {currentLeaderboard.pagination?.hasNextPage && (
                           <div className="mt-6 flex justify-center">
                             <Button
                               variant="outline"
@@ -436,7 +524,7 @@ export default function LeaderboardsPage() {
                         {/* Results Info */}
                         {currentLeaderboard.pagination && (
                           <div className="mt-4 text-center text-sm text-muted-foreground">
-                            Showing {currentLeaderboard.entries.length} of {currentLeaderboard.pagination.totalCount} developers
+                            Showing {currentLeaderboard.entries?.length || 0} of {currentLeaderboard.pagination?.totalCount || 0} developers
                           </div>
                         )}
                       </CardContent>
@@ -473,7 +561,7 @@ export default function LeaderboardsPage() {
         >
           {leaderboardTypes.map((type, index) => {
             const data = leaderboards[type.key]
-            const topScore = data?.entries[0]?.score || 0
+            const topScore = data?.entries?.[0]?.score || 0
 
             return (
               <motion.div
@@ -495,6 +583,14 @@ export default function LeaderboardsPage() {
                           {type.key === "points" ? `Level ${getPowerLevelFromPoints(topScore)}` : formatNumber(topScore)}
                         </div>
                         <div className="text-xs text-muted-foreground">{type.label}</div>
+                        <div className="text-xs text-muted-foreground capitalize">
+                          {timeFilter === 'overall' ? 'All Time' : timeFilter}
+                        </div>
+                        {data?.sessionInfo && (
+                          <div className="text-xs text-muted-foreground">
+                            {formatSessionDateLocal(data.sessionInfo.startDate)} - {formatSessionDateLocal(data.sessionInfo.endDate)}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>

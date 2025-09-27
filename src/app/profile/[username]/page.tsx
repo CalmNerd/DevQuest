@@ -25,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { BadgeDisplay, BadgeGrid } from '@/components/features/badge-display'
 import { ContributionGraph } from '@/components/features/contribution-graph'
 import { ProfileData } from "@/types"
+import { formatCacheDate, formatProfileDate } from "@/lib/date-formatter"
 
 export default function ProfilePage() {
   const params = useParams()
@@ -133,7 +134,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2">
               {profile.cached && (
                 <Badge variant="secondary" className="text-xs">
-                  Cached {new Date(profile.lastUpdated).toLocaleTimeString()}
+                  Cached {formatCacheDate(profile.lastUpdated)}
                 </Badge>
               )}
               <Button
@@ -218,7 +219,7 @@ export default function ProfilePage() {
                     )}
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      Joined {new Date(profile.created_at).toLocaleDateString()}
+                      Joined {formatProfileDate(profile.created_at)}
                     </div>
                   </div>
 

@@ -1,6 +1,7 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { type NextRequest } from "next/server"
 import { drizzleDb } from "@/services/database/drizzle.service"
 import { leaderboardService } from "@/services/api/leaderboard.service"
+import { ApiResponse } from "@/lib/api-response"
 
 export async function GET(request: NextRequest) {
   try {
@@ -77,28 +78,26 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Leaderboard] Found ${entries.length} entries for ${type}, page ${page}/${totalPages}`)
 
-    return NextResponse.json({
-      type,
-      period,
-      entries,
-      pagination: {
-        currentPage: page,
-        totalPages,
-        totalCount,
-        limit,
-        hasNextPage,
-        hasPrevPage,
-      },
-      lastUpdated: new Date().toISOString(),
+    return ApiResponse.paginatedWithTransformedTimestamps(entries, {
+      currentPage: page,
+      totalPages,
+      totalCount,
+      limit,
+      hasNextPage,
+      hasPrevPage,
+    }, {
+      headers: {
+        'X-Leaderboard-Type': type,
+        'X-Period': period,
+      }
     })
   } catch (error) {
     console.error("Error fetching leaderboard:", error)
-    return NextResponse.json(
-      { 
-        error: "Failed to fetch leaderboard",
+    return ApiResponse.error(
+      "Failed to fetch leaderboard",
+      {
         details: error instanceof Error ? error.message : "Unknown error"
-      }, 
-      { status: 500 }
+      }
     )
   }
 }

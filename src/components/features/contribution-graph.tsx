@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Calendar, TrendingUp, Zap } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { formatContributionDate } from "@/lib/date-formatter"
 
 interface ContributionDay {
   date: string
@@ -97,13 +98,7 @@ export function ContributionGraph({ contributionGraph, className = "" }: Contrib
   }
 
   const formatDate = (dateString: string): string => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    })
+    return formatContributionDate(dateString)
   }
 
   const getMonthLabels = () => {

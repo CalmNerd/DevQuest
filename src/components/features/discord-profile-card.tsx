@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { BadgeDisplay } from "./badge-display"
+import { formatProfileDate } from "@/lib/date-formatter"
 import type { UserProfile } from "@/types/github.types"
 
 interface DiscordProfileCardProps {
@@ -196,7 +197,7 @@ export function DiscordProfileCard({ profile, isOpen, onClose, position }: Disco
                   )}
                   <div className="flex items-center gap-2">
                     <Calendar className="h-3 w-3" />
-                    <span>Joined {new Date(profile.user.created_at).toLocaleDateString()}</span>
+                    <span>Joined {formatProfileDate(profile.user.created_at)}</span>
                   </div>
                 </div>
 

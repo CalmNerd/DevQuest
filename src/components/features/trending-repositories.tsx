@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { TrendingRepository } from '@/types/github.types'
 import { popularLanguages } from '@/lib/constants'
+import { formatRepositoryDate } from '@/lib/date-formatter'
 import githubColors from "@/lib/github-colors.json"
 import Link from "next/link"
 
@@ -101,23 +102,7 @@ export default function TrendingRepositories({
   }
 
   const getTimeAgo = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInMs = now.getTime() - date.getTime()
-    const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
-    const diffInYears = Math.floor(diffInDays / 365)
-
-    if (diffInHours < 1) {
-      return `${diffInMinutes}m ago`
-    } else if (diffInHours < 24) {
-      return `${diffInHours}h ago`
-    } else if (diffInDays < 365) {
-      return `${diffInDays}d ago`
-    } else {
-      return `${diffInYears}y ago`
-    }
+    return formatRepositoryDate(dateString)
   }
 
   const getTrendingTypeLabel = () => {

@@ -1,6 +1,7 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { type NextRequest } from "next/server"
 import { sessionLeaderboardService } from "@/services/api/session-leaderboard.service"
 import { drizzleDb } from "@/services/database/drizzle.service"
+import { ApiResponse } from "@/lib/api-response"
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type") || "points"
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "30")
-    
+
     // Calculate offset for pagination
     const offset = (page - 1) * limit
 
@@ -48,11 +49,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Get session information for display
+    let sessionInfo = null
+    if (type === 'commits' || type === 'points') {
+      const sessionStats = await sessionLeaderboardService.getSessionStats(sessionType as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'overall')
+      sessionInfo = sessionStats.sessionInfo
+    }
+
     // Transform data to match expected format
     const entries = leaderboardData.map((entry, index) => {
       // Handle different data sources
       const isSessionData = type === 'commits' || type === 'points'
-      
+
       return {
         rank: entry.rank || (offset + index + 1),
         username: entry.username,
@@ -72,6 +80,10 @@ export async function GET(request: NextRequest) {
         // Session-specific data (only for session-based leaderboards)
         commits: isSessionData ? (entry.commits || 0) : 0,
         sessionType: isSessionData ? sessionType : 'global',
+        // Session information for UI display
+        sessionKey: isSessionData ? entry.sessionKey : null,
+        sessionStartDate: isSessionData ? entry.sessionStartDate : null,
+        sessionEndDate: isSessionData ? entry.sessionEndDate : null,
       }
     })
 
@@ -82,29 +94,36 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Session Leaderboard] Found ${entries.length} entries for ${sessionType} ${type}, page ${page}/${totalPages}`)
 
-    return NextResponse.json({
+    // Create response data with session info
+    const responseData = {
+      entries,
+      sessionInfo,
       type,
       sessionType,
-      period: sessionType, // Use sessionType as period for compatibility
-      entries,
-      pagination: {
-        currentPage: page,
-        totalPages,
-        totalCount,
-        limit,
-        hasNextPage,
-        hasPrevPage,
-      },
-      lastUpdated: new Date().toISOString(),
+      period: sessionType,
+    }
+
+    return ApiResponse.success(responseData, {
+      headers: {
+        'X-Session-Type': sessionType,
+        'X-Leaderboard-Type': type,
+        'X-Pagination': JSON.stringify({
+          currentPage: page,
+          totalPages,
+          totalCount,
+          limit,
+          hasNextPage,
+          hasPrevPage,
+        })
+      }
     })
   } catch (error) {
     console.error("Error fetching session leaderboard:", error)
-    return NextResponse.json(
-      { 
-        error: "Failed to fetch session leaderboard",
+    return ApiResponse.error(
+      "Failed to fetch session leaderboard",
+      {
         details: error instanceof Error ? error.message : "Unknown error"
-      }, 
-      { status: 500 }
+      }
     )
   }
 }

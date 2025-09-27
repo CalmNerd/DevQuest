@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { formatAdminDate } from "@/lib/date-formatter"
 
 interface ServiceStatus {
   isRunning: boolean
@@ -251,7 +252,7 @@ export default function BackgroundServiceAdmin() {
                         <div className="text-muted-foreground">{session.sessionKey}</div>
                         {session.nextUpdate && (
                           <div className="text-muted-foreground">
-                            Next: {new Date(session.nextUpdate).toLocaleString()}
+                            Next: {formatAdminDate(session.nextUpdate)}
                           </div>
                         )}
                       </div>
