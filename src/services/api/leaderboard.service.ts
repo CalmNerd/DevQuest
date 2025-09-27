@@ -2,11 +2,11 @@ import { storage } from "../../lib/storage"
 import { db } from "../database/db-http.service"
 import { leaderboards, users } from "../../lib/schema"
 import { eq, and, sql } from "drizzle-orm"
+import { timezoneService } from "../../lib/timezone"
 
 class LeaderboardService {
   async updateUserLeaderboards(userId: string, stats: any) {
     const periods = ["daily", "weekly", "monthly", "yearly", "global"]
-    const now = new Date()
 
     for (const period of periods) {
       let periodDate: string
@@ -14,28 +14,29 @@ class LeaderboardService {
 
       switch (period) {
         case "daily": {
-          const todayStr = now.toISOString().split("T")[0]
+          const todayStr = timezoneService.getCurrentUTCDate()
           periodDate = todayStr
           commits = this.calculateDailyCommits(stats.contributionGraph, todayStr)
           break
         }
         case "weekly": {
-          const weekStart = this.getWeekStartUtcDate(now)
-          const weekEnd = this.addDaysUtc(weekStart, 6)
-          const weekStartStr = weekStart.toISOString().split("T")[0]
-          periodDate = weekStartStr
-          const weekEndStr = weekEnd.toISOString().split("T")[0]
+          const weekRange = timezoneService.getPeriodDateRange('weekly')
+          const weekStartStr = weekRange.start.split('T')[0]
+          const weekEndStr = weekRange.end.split('T')[0]
+          periodDate = timezoneService.getPeriodDate('weekly')
           commits = this.calculateWeeklyCommits(stats.contributionGraph, weekStartStr, weekEndStr)
           break
         }
         case "monthly": {
-          periodDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
-          commits = this.calculateMonthlyCommits(stats.contributionGraph, now.getFullYear(), now.getMonth())
+          periodDate = timezoneService.getPeriodDate('monthly')
+          const monthRange = timezoneService.getPeriodDateRange('monthly')
+          commits = this.calculateMonthlyCommitsFromRange(stats.contributionGraph, monthRange.start, monthRange.end)
           break
         }
         case "yearly": {
-          periodDate = String(now.getFullYear())
-          commits = this.calculateYearlyCommits(stats.contributionGraph, now.getFullYear())
+          periodDate = timezoneService.getPeriodDate('yearly')
+          const yearRange = timezoneService.getPeriodDateRange('yearly')
+          commits = this.calculateYearlyCommitsFromRange(stats.contributionGraph, yearRange.start, yearRange.end)
           break
         }
         case "global": {
@@ -134,6 +135,46 @@ class LeaderboardService {
     return totalCommits
   }
 
+    // Calculate monthly commits from date range (UTC)
+    // This ensures accurate monthly commit calculation using UTC dates
+  private calculateMonthlyCommitsFromRange(contributionGraph: any, startDate: string, endDate: string): number {
+    if (!contributionGraph?.weeks) return 0
+    let totalCommits = 0
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    
+    for (const week of contributionGraph.weeks) {
+      for (const day of week.contributionDays) {
+        const dayDate = new Date(day.date)
+        // Check if the day falls within the UTC date range
+        if (dayDate >= start && dayDate <= end) {
+          totalCommits += day.contributionCount || 0
+        }
+      }
+    }
+    return totalCommits
+  }
+
+    // Calculate yearly commits from date range (UTC)
+    // This ensures accurate yearly commit calculation using UTC dates
+  private calculateYearlyCommitsFromRange(contributionGraph: any, startDate: string, endDate: string): number {
+    if (!contributionGraph?.weeks) return 0
+    let totalCommits = 0
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    
+    for (const week of contributionGraph.weeks) {
+      for (const day of week.contributionDays) {
+        const dayDate = new Date(day.date)
+        // Check if the day falls within the UTC date range
+        if (dayDate >= start && dayDate <= end) {
+          totalCommits += day.contributionCount || 0
+        }
+      }
+    }
+    return totalCommits
+  }
+
   private async updateRanksForPeriod(period: string, periodDate: string) {
     await db.execute(sql`
       WITH ordered AS (
@@ -153,60 +194,13 @@ class LeaderboardService {
     const periods = ["daily", "weekly", "monthly", "yearly", "global"]
 
     for (const period of periods) {
-      const now = new Date()
-      let periodDate: string
-
-      switch (period) {
-        case "daily":
-          periodDate = now.toISOString().split("T")[0]
-          break
-        case "weekly": {
-          const weekStart = this.getWeekStartUtcDate(now)
-          periodDate = weekStart.toISOString().split("T")[0]
-          break
-        }
-        case "monthly":
-          periodDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
-          break
-        case "yearly":
-          periodDate = String(now.getFullYear())
-          break
-        case "global":
-          periodDate = "all-time"
-          break
-        default:
-          continue
-      }
-
+      const periodDate = timezoneService.getPeriodDate(period as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'global')
       await this.updateRanksForPeriod(period, periodDate)
     }
   }
 
   async getLeaderboardWithUsers(period: string, limit: number, offset = 0) {
-    const now = new Date()
-    let periodDate: string
-
-    switch (period) {
-      case "daily":
-        periodDate = now.toISOString().split("T")[0]
-        break
-      case "weekly": {
-        const weekStart = this.getWeekStartUtcDate(now)
-        periodDate = weekStart.toISOString().split("T")[0]
-        break
-      }
-      case "monthly":
-        periodDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
-        break
-      case "yearly":
-        periodDate = String(now.getFullYear())
-        break
-      case "global":
-        periodDate = "all-time"
-        break
-      default:
-        periodDate = now.toISOString().split("T")[0]
-    }
+    const periodDate = timezoneService.getPeriodDate(period as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'global')
 
     const result = await db
       .select({
@@ -237,30 +231,7 @@ class LeaderboardService {
   }
   
   async getTotalLeaderboardUsersCount(period: string): Promise<number> {
-    const now = new Date()
-    let periodDate: string
-
-    switch (period) {
-      case "daily":
-        periodDate = now.toISOString().split("T")[0]
-        break
-      case "weekly": {
-        const weekStart = this.getWeekStartUtcDate(now)
-        periodDate = weekStart.toISOString().split("T")[0]
-        break
-      }
-      case "monthly":
-        periodDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
-        break
-      case "yearly":
-        periodDate = String(now.getFullYear())
-        break
-      case "global":
-        periodDate = "all-time"
-        break
-      default:
-        periodDate = now.toISOString().split("T")[0]
-    }
+    const periodDate = timezoneService.getPeriodDate(period as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'global')
 
     const result = await db
       .select({ count: sql<number>`count(*)` })
@@ -284,22 +255,7 @@ class LeaderboardService {
   }
 
   private getPeriodDate(period: string): string {
-    const now = new Date()
-    switch (period) {
-      case 'daily':
-        return now.toISOString().split('T')[0] // YYYY-MM-DD
-      case 'weekly':
-        const weekStart = new Date(now)
-        weekStart.setDate(now.getDate() - now.getDay())
-        return weekStart.toISOString().split('T')[0]
-      case 'monthly':
-        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-      case 'yearly':
-        return now.getFullYear().toString()
-      case 'overall':
-      default:
-        return 'all-time'
-    }
+    return timezoneService.getPeriodDate(period as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'global')
   }
 }
 

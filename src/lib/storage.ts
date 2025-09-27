@@ -15,6 +15,7 @@ import {
 } from "./schema"
 import { db } from "../services/database/db-http.service"
 import { eq, and, sql } from "drizzle-orm"
+import { timezoneService } from "./timezone"
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -295,29 +296,7 @@ export class DatabaseStorage implements IStorage {
 
   // Leaderboard operations
   async getLeaderboard(period: string, limit = 50): Promise<Leaderboard[]> {
-    const today = new Date()
-    let periodDate: string
-
-    switch (period) {
-      case "daily":
-        periodDate = today.toISOString().split("T")[0]
-        break
-      case "weekly":
-        const weekStart = new Date(today.setDate(today.getDate() - today.getDay()))
-        periodDate = weekStart.toISOString().split("T")[0]
-        break
-      case "monthly":
-        periodDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`
-        break
-      case "yearly":
-        periodDate = String(today.getFullYear())
-        break
-      case "global":
-        periodDate = "all-time"
-        break
-      default:
-        periodDate = today.toISOString().split("T")[0]
-    }
+    const periodDate = timezoneService.getPeriodDate(period as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'global')
 
     return await db
       .select()
@@ -382,32 +361,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserRank(userId: string, period: string): Promise<number | undefined> {
-    const now = new Date()
-    let periodDate: string
-
-    switch (period) {
-      case "daily":
-        periodDate = now.toISOString().split("T")[0]
-        break
-      case "weekly": {
-        const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
-        const day = d.getUTCDay()
-        d.setUTCDate(d.getUTCDate() - day)
-        periodDate = d.toISOString().split("T")[0]
-        break
-      }
-      case "monthly":
-        periodDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
-        break
-      case "yearly":
-        periodDate = String(now.getFullYear())
-        break
-      case "global":
-        periodDate = "all-time"
-        break
-      default:
-        periodDate = now.toISOString().split("T")[0]
-    }
+    const periodDate = timezoneService.getPeriodDate(period as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'global')
 
     const [result] = await db
       .select({ rank: leaderboards.rank })

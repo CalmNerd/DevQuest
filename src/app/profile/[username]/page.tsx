@@ -33,12 +33,14 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [dataReady, setDataReady] = useState(false)
 
   const fetchProfile = async (forceRefresh = false) => {
     try {
       setLoading(!profile)
       setRefreshing(forceRefresh)
       setError(null)
+      setDataReady(false) // Reset data ready state when starting new fetch
 
       const url = `/api/github/${username}${forceRefresh ? "?refresh=true" : ""}`
       const response = await fetch(url)
@@ -52,6 +54,10 @@ export default function ProfilePage() {
 
       const data = await response.json()
       setProfile(data)
+      // Only set dataReady to true when we have all required data
+      if (data && data.login && data.avatar_url) {
+        setDataReady(true)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
@@ -66,7 +72,8 @@ export default function ProfilePage() {
     }
   }, [username])
 
-  if (loading && !profile) {
+  // Show loading state until data is ready
+  if (loading || !dataReady || !profile) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
@@ -102,13 +109,17 @@ export default function ProfilePage() {
     )
   }
 
-  if (!profile) return null
+  // At this point, we know profile exists and dataReady is true, so we can safely access properties
+  // Safely handle topLanguages with fallback for undefined/null values
+  const topLanguages = profile.topLanguages && typeof profile.topLanguages === 'object' 
+    ? Object.entries(profile.topLanguages)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
+        .slice(0, 5)
+    : []
 
-  const topLanguages = Object.entries(profile.topLanguages)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5)
-
-  const totalLanguageRepos = Object.values(profile.topLanguages).reduce((sum, count) => sum + count, 0)
+  const totalLanguageRepos = profile.topLanguages && typeof profile.topLanguages === 'object'
+    ? Object.values(profile.topLanguages).reduce((sum, count) => sum + (count as number), 0)
+    : 0
 
   return (
     <div className="min-h-screen bg-background">
@@ -149,7 +160,9 @@ export default function ProfilePage() {
               <div className="flex flex-col gap-6 md:flex-row md:items-start">
                 <Avatar className="h-32 w-32 border-4 border-primary/20">
                   <AvatarImage src={profile.avatar_url || "/placeholder.svg"} alt={profile.login} />
-                  <AvatarFallback className="text-2xl">{profile.login[0].toUpperCase()}</AvatarFallback>
+                  <AvatarFallback className="text-2xl">
+                    {profile.login && profile.login.length > 0 ? profile.login[0].toUpperCase() : 'U'}
+                  </AvatarFallback>
                 </Avatar>
 
                 <div className="flex-1">
@@ -176,7 +189,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {profile.achievements.length > 0 && (
+                  {profile.achievements && profile.achievements.length > 0 && (
                     <div className="mb-4">
                       <p className="mb-2 text-sm font-medium text-muted-foreground">Achievements</p>
                       <BadgeDisplay badgeIds={profile.achievements} maxDisplay={8} />
@@ -479,48 +492,60 @@ export default function ProfilePage() {
               </div>
 
               {/* Contribution Graph */}
-              <ContributionGraph contributionGraph={profile.contributionGraph} />
+              {profile.contributionGraph && (
+                <ContributionGraph contributionGraph={profile.contributionGraph} />
+              )}
             </TabsContent>
 
             <TabsContent value="repositories" className="space-y-6">
               <div className="grid gap-4">
-                {profile.repos.slice(0, 10).map((repo) => (
-                  <Card key={repo.id} className="transition-all hover:shadow-md">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="mb-2 font-semibold">
-                            <a
-                              href={repo.html_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:text-primary"
-                            >
-                              {repo.name}
-                            </a>
-                          </h3>
-                          {repo.description && <p className="mb-3 text-sm text-muted-foreground">{repo.description}</p>}
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            {repo.language && (
+                {profile.repos && profile.repos.length > 0 ? (
+                  profile.repos.slice(0, 10).map((repo) => (
+                    <Card key={repo.id} className="transition-all hover:shadow-md">
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="mb-2 font-semibold">
+                              <a
+                                href={repo.html_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-primary"
+                              >
+                                {repo.name}
+                              </a>
+                            </h3>
+                            {repo.description && <p className="mb-3 text-sm text-muted-foreground">{repo.description}</p>}
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              {repo.language && (
+                                <div className="flex items-center gap-1">
+                                  <div className="h-2 w-2 rounded-full bg-primary" />
+                                  {repo.language}
+                                </div>
+                              )}
                               <div className="flex items-center gap-1">
-                                <div className="h-2 w-2 rounded-full bg-primary" />
-                                {repo.language}
+                                <Star className="h-3 w-3" />
+                                {repo.stargazers_count}
                               </div>
-                            )}
-                            <div className="flex items-center gap-1">
-                              <Star className="h-3 w-3" />
-                              {repo.stargazers_count}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <GitFork className="h-3 w-3" />
-                              {repo.forks_count}
+                              <div className="flex items-center gap-1">
+                                <GitFork className="h-3 w-3" />
+                                {repo.forks_count}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <BookOpen className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                      <h3 className="mb-2 text-lg font-semibold">No Repositories Found</h3>
+                      <p className="text-muted-foreground">This user doesn't have any public repositories yet.</p>
                     </CardContent>
                   </Card>
-                ))}
+                )}
               </div>
             </TabsContent>
 
@@ -603,7 +628,7 @@ export default function ProfilePage() {
 
             <TabsContent value="achievements" className="space-y-6">
               <BadgeGrid
-                badgeIds={profile.achievements}
+                badgeIds={profile.achievements || []}
                 title="Earned Achievements"
                 emptyMessage="No achievements unlocked yet. Keep contributing to earn your first badge!"
               />

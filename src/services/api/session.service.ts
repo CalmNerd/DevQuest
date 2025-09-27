@@ -2,6 +2,7 @@ import { db } from '../database/db-http.service'
 import { leaderboardSessions, leaderboards, users, githubStats } from '../../lib/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import { LeaderboardSession, InsertLeaderboardSession } from '../../lib/schema'
+import { timezoneService } from '../../lib/timezone'
 
 //  Session types and their configurations
 export const SESSION_CONFIGS = {
@@ -95,7 +96,6 @@ class SessionManagementService {
   //  Ensure there's an active session for the given session type
   private async ensureActiveSession(sessionType: SessionType): Promise<void> {
     const config = SESSION_CONFIGS[sessionType as keyof typeof SESSION_CONFIGS]
-    const now = new Date()
     
     // Check if there's already an active session
     const existingSession = await db
@@ -116,10 +116,10 @@ class SessionManagementService {
       return
     }
 
-    // Create new session
-    const sessionKey = this.generateSessionKey(sessionType, now)
-    const startDate = this.getSessionStartDate(sessionType, now)
-    const endDate = this.getSessionEndDate(sessionType, startDate)
+    // Create new session using timezone service
+    const sessionKey = timezoneService.getSessionKey(sessionType)
+    const startDate = timezoneService.getSessionStartDate(sessionType)
+    const endDate = timezoneService.getSessionEndDate(sessionType)
 
     const newSession: InsertLeaderboardSession = {
       sessionType,
@@ -128,7 +128,7 @@ class SessionManagementService {
       endDate,
       isActive: true,
       updateIntervalMinutes: config.updateIntervalMinutes,
-      nextUpdateAt: new Date(now.getTime() + config.updateIntervalMinutes * 60 * 1000),
+      nextUpdateAt: new Date(Date.now() + config.updateIntervalMinutes * 60 * 1000),
     }
 
     const [createdSession] = await db
@@ -258,7 +258,7 @@ class SessionManagementService {
           userId: user.userId,
           sessionId: session.id,
           period: session.sessionType,
-          periodDate: this.getPeriodDate(session.sessionType as SessionType, session.startDate),
+          periodDate: timezoneService.getPeriodDate(session.sessionType as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'global'),
           commits: this.getCommitsForSession(user, session.sessionType as SessionType),
           score: user.score,
           rank,
@@ -336,11 +336,12 @@ class SessionManagementService {
   //  Create a new session when the current one expires
     
   private async createNewSession(sessionType: SessionType): Promise<void> {
-    const now = new Date()
-    const sessionKey = this.generateSessionKey(sessionType, now)
-    const startDate = this.getSessionStartDate(sessionType, now)
-    const endDate = this.getSessionEndDate(sessionType, startDate)
     const config = SESSION_CONFIGS[sessionType as keyof typeof SESSION_CONFIGS]
+    
+    // Use timezone service for consistent date handling
+    const sessionKey = timezoneService.getSessionKey(sessionType)
+    const startDate = timezoneService.getSessionStartDate(sessionType)
+    const endDate = timezoneService.getSessionEndDate(sessionType)
 
     // Deactivate old session
     await db
@@ -364,7 +365,7 @@ class SessionManagementService {
       endDate,
       isActive: true,
       updateIntervalMinutes: config.updateIntervalMinutes,
-      nextUpdateAt: new Date(now.getTime() + config.updateIntervalMinutes * 60 * 1000),
+      nextUpdateAt: new Date(Date.now() + config.updateIntervalMinutes * 60 * 1000),
     }
 
     const [createdSession] = await db
@@ -376,114 +377,8 @@ class SessionManagementService {
     console.log(`Created new ${sessionType} session: ${sessionKey}`)
   }
 
-    //  Generate a unique session key
-    
-  private generateSessionKey(sessionType: SessionType, date: Date): string {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const week = this.getWeekNumber(date)
-    
-    switch (sessionType) {
-      case 'daily':
-        return `${sessionType}-${year}-${month}-${day}`
-      case 'weekly':
-        return `${sessionType}-${year}-W${week}`
-      case 'monthly':
-        return `${sessionType}-${year}-${month}`
-      case 'yearly':
-        return `${sessionType}-${year}`
-      case 'overall':
-        return `${sessionType}-all-time`
-      default:
-        return `${sessionType}-${year}-${month}-${day}`
-    }
-  }
-
-  //  Get session start date based on type
-  private getSessionStartDate(sessionType: SessionType, date: Date): Date {
-    const newDate = new Date(date)
-    
-    switch (sessionType) {
-      case 'daily':
-        // Start at midnight
-        newDate.setHours(0, 0, 0, 0)
-        return newDate
-      case 'weekly':
-        // Start on Monday at midnight
-        const dayOfWeek = newDate.getDay()
-        const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-        newDate.setDate(newDate.getDate() - daysToMonday)
-        newDate.setHours(0, 0, 0, 0)
-        return newDate
-      case 'monthly':
-        // Start on first day of month
-        newDate.setDate(1)
-        newDate.setHours(0, 0, 0, 0)
-        return newDate
-      case 'yearly':
-        // Start on January 1st
-        newDate.setMonth(0, 1)
-        newDate.setHours(0, 0, 0, 0)
-        return newDate
-      case 'overall':
-        // Start from a fixed date (e.g., 2020-01-01)
-        return new Date('2020-01-01T00:00:00Z')
-      default:
-        return newDate
-    }
-  }
-
-  //  Get session end date based on type
-    
-  private getSessionEndDate(sessionType: SessionType, startDate: Date): Date {
-    const endDate = new Date(startDate)
-    const config = SESSION_CONFIGS[sessionType as keyof typeof SESSION_CONFIGS]
-    
-    endDate.setTime(endDate.getTime() + config.durationHours * 60 * 60 * 1000)
-    
-    // For daily, weekly, monthly, yearly - end at 23:59:59
-    if (sessionType !== 'overall') {
-      endDate.setHours(23, 59, 59, 999)
-    }
-    
-    return endDate
-  }
-
-  //  Get period date string for leaderboard
-    
-  private getPeriodDate(sessionType: SessionType, startDate: Date): string {
-    const year = startDate.getFullYear()
-    const month = String(startDate.getMonth() + 1).padStart(2, '0')
-    const day = String(startDate.getDate()).padStart(2, '0')
-    const week = this.getWeekNumber(startDate)
-    
-    switch (sessionType) {
-      case 'daily':
-        return `${year}-${month}-${day}`
-      case 'weekly':
-        return `${year}-W${week}`
-      case 'monthly':
-        return `${year}-${month}`
-      case 'yearly':
-        return `${year}`
-      case 'overall':
-        return 'all-time'
-      default:
-        return `${year}-${month}-${day}`
-    }
-  }
-
-  //  Get week number of the year
-    
-  private getWeekNumber(date: Date): string {
-    const start = new Date(date.getFullYear(), 0, 1)
-    const days = Math.floor((date.getTime() - start.getTime()) / (24 * 60 * 60 * 1000))
-    return String(Math.ceil((days + start.getDay() + 1) / 7)).padStart(2, '0')
-  }
 
   //  Get service status
-    
   getStatus(): {
     isRunning: boolean
     activeSessions: Array<{

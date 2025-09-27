@@ -197,13 +197,13 @@ export async function GET(request: NextRequest, { params }: { params: { username
       nextLevelCost: powerLevel.nextLevelCost,
 
       // Languages and repositories
-      topLanguages: statsData.languageStats,
+      topLanguages: statsData.languageStats || {},
       repos: repos.slice(0, 20), // Limit to top 20 repos
 
       // Contribution graph
       contributionGraph: statsData.contributionGraph || { weeks: [], totalContributions: 0 },
 
-      achievements: generateBasicAchievements(statsData, githubData, repos),
+      achievements: generateBasicAchievements(statsData, githubData, repos) || [],
 
       // Metadata
       cached: false,

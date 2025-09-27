@@ -1,5 +1,6 @@
 import { storage } from "../../lib/storage"
 import { githubService } from "../external/github.service"
+import { timezoneService } from "../../lib/timezone"
 
 class BackgroundUpdateService {
   private updateInterval: NodeJS.Timeout | null = null
@@ -9,7 +10,6 @@ class BackgroundUpdateService {
   private readonly BATCH_DELAY_MS = Number.parseInt(process.env.BACKGROUND_UPDATE_BATCH_DELAY_MS || "2000") // Default: 2 seconds between batches
 
   //  Start the background update service
-
   start(): void {
     if (this.updateInterval) {
       console.log("Background update service is already running")
@@ -324,33 +324,7 @@ class BackgroundUpdateService {
 
   //  Get period date for a session type
   private getPeriodDate(sessionType: string, startDate: Date): string {
-    const date = new Date(startDate)
-    
-    switch (sessionType) {
-      case 'daily':
-        return date.toISOString().split('T')[0] // YYYY-MM-DD
-      case 'weekly':
-        const year = date.getFullYear()
-        const week = this.getWeekNumber(date)
-        return `${year}-W${week.toString().padStart(2, '0')}`
-      case 'monthly':
-        return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`
-      case 'yearly':
-        return date.getFullYear().toString()
-      case 'overall':
-        return 'all-time'
-      default:
-        return date.toISOString().split('T')[0]
-    }
-  }
-
-  //  Get week number for a date
-  private getWeekNumber(date: Date): number {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-    const dayNum = d.getUTCDay() || 7
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum)
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+    return timezoneService.getPeriodDate(sessionType as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'global')
   }
 }
 
