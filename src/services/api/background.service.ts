@@ -287,7 +287,7 @@ class BackgroundUpdateService {
             score: score,
           })
 
-          console.log(`Updated ${sessionType} leaderboard for user ${userId}: ${commits[sessionType]} commits, ${score} score`)
+          console.log(`Updated ${sessionType} leaderboard for user ${userId}: ${commits[sessionType]} commits, ${score} score (rank updated immediately)`)
         } catch (error) {
           console.error(`Error updating ${sessionType} leaderboard for user ${userId}:`, error)
         }

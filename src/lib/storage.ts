@@ -41,6 +41,10 @@ export interface IStorage {
   getLeaderboard(period: string, limit?: number): Promise<Leaderboard[]>
   updateLeaderboardEntry(entry: InsertLeaderboard): Promise<Leaderboard>
   getUserRank(userId: string, period: string): Promise<number | undefined>
+  
+  // Rank update operations (for immediate rank calculation)
+  updateSessionRanks(sessionId: number): Promise<void>
+  updateRanksForPeriod(period: string, periodDate: string): Promise<void>
 }
 
 export class DatabaseStorage implements IStorage {
@@ -322,6 +326,10 @@ export class DatabaseStorage implements IStorage {
           },
         })
         .returning()
+
+      // Immediately update ranks for this session after adding/updating the entry
+      await this.updateSessionRanks(entry.sessionId)
+      
       return result
     } else {
       // Legacy leaderboard entry - use upsert approach
@@ -348,6 +356,10 @@ export class DatabaseStorage implements IStorage {
           })
           .where(eq(leaderboards.id, existing[0].id))
           .returning()
+
+        // Immediately update ranks for this period after updating the entry
+        await this.updateRanksForPeriod(entry.period, entry.periodDate)
+        
         return result
       } else {
         // Insert new entry
@@ -355,6 +367,10 @@ export class DatabaseStorage implements IStorage {
           .insert(leaderboards)
           .values(entry)
           .returning()
+
+        // Immediately update ranks for this period after adding the entry
+        await this.updateRanksForPeriod(entry.period, entry.periodDate)
+        
         return result
       }
     }
@@ -371,6 +387,50 @@ export class DatabaseStorage implements IStorage {
       )
 
     return result?.rank ?? undefined
+  }
+
+
+  //  This ensures that when a new user is added, their rank is immediately calculated
+  async updateSessionRanks(sessionId: number): Promise<void> {
+    try {
+      await db.execute(sql`
+        WITH ordered AS (
+          SELECT id, commits as rank_value,
+            ROW_NUMBER() OVER (ORDER BY commits DESC, score DESC, updated_at ASC) AS new_rank
+          FROM ${leaderboards}
+          WHERE session_id = ${sessionId}
+        )
+        UPDATE ${leaderboards} AS l
+        SET rank = o.new_rank
+        FROM ordered o
+        WHERE l.id = o.id;
+      `)
+    } catch (error) {
+      console.error(`Error updating ranks for session ${sessionId}:`, error)
+      // Don't throw error to avoid breaking the main flow
+    }
+  }
+  
+   //  Update ranks for a specific period (legacy system)
+   //  This ensures that when a new user is added, their rank is immediately calculated
+  async updateRanksForPeriod(period: string, periodDate: string): Promise<void> {
+    try {
+      await db.execute(sql`
+        WITH ordered AS (
+          SELECT id, commits as rank_value,
+            ROW_NUMBER() OVER (ORDER BY commits DESC, score DESC, updated_at ASC) AS new_rank
+          FROM ${leaderboards}
+          WHERE period = ${period} AND period_date = ${periodDate}
+        )
+        UPDATE ${leaderboards} AS l
+        SET rank = o.new_rank
+        FROM ordered o
+        WHERE l.id = o.id;
+      `)
+    } catch (error) {
+      console.error(`Error updating ranks for period ${period} (${periodDate}):`, error)
+      // Don't throw error to avoid breaking the main flow
+    }
   }
 }
 
