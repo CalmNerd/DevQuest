@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getIssues } from '@/services/api/issues.service'
 import { mockIssues } from '@/lib/constants'
-import { getCurrentUser, getUserGitHubToken } from '@/lib/auth-utils'
+import { getCurrentUser } from '@/lib/auth-utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     // Get current user and their GitHub token if available
     const user = await getCurrentUser(request)
-    const userToken = user ? await getUserGitHubToken(user.id) : null
+    const userToken = user ? user.githubToken : null
     
     if (userToken) {
       console.log(`[API] Using user's GitHub token for issue search`)
