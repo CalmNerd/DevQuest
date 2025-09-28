@@ -1,14 +1,31 @@
 import { storage } from "../../lib/storage"
+import { tokenEncryption } from "../../lib/encryption"
 
 class GitHubService {
   private baseUrl = "https://api.github.com"
   private graphqlUrl = "https://api.github.com/graphql"
+  private userToken?: string
+
+  constructor(userToken?: string) {
+    this.userToken = userToken
+  }
 
   private async makeRequest(url: string, options: RequestInit = {}) {
-    const token = process.env.GITHUB_TOKEN
+    // Use user token if provided, otherwise fall back to app token
+    let token = this.userToken || process.env.GITHUB_TOKEN
+
+    // If user token is encrypted, decrypt it
+    if (this.userToken && tokenEncryption.isEncrypted(this.userToken)) {
+      try {
+        token = tokenEncryption.decryptToken(this.userToken)
+      } catch (error) {
+        console.warn('Failed to decrypt user token, falling back to app token:', error)
+        token = process.env.GITHUB_TOKEN
+      }
+    }
 
     if (!token) {
-      throw new Error("GitHub token is required. Please set GITHUB_TOKEN environment variable.")
+      throw new Error("GitHub token is required. Please set GITHUB_TOKEN environment variable or provide user token.")
     }
 
     const baseHeaders: Record<string, string> = {
@@ -31,10 +48,21 @@ class GitHubService {
   }
 
   private async makeGraphQLRequest(query: string, variables: any = {}) {
-    const token = process.env.GITHUB_TOKEN
+    // Use user token if provided, otherwise fall back to app token
+    let token = this.userToken || process.env.GITHUB_TOKEN
+
+    // If user token is encrypted, decrypt it
+    if (this.userToken && tokenEncryption.isEncrypted(this.userToken)) {
+      try {
+        token = tokenEncryption.decryptToken(this.userToken)
+      } catch (error) {
+        console.warn('Failed to decrypt user token, falling back to app token:', error)
+        token = process.env.GITHUB_TOKEN
+      }
+    }
 
     if (!token) {
-      throw new Error("GitHub token is required. Please set GITHUB_TOKEN environment variable.")
+      throw new Error("GitHub token is required. Please set GITHUB_TOKEN environment variable or provide user token.")
     }
 
     const headers: Record<string, string> = {
@@ -940,4 +968,8 @@ class GitHubService {
   }
 }
 
+// Export singleton instance (uses app token)
 export const githubService = new GitHubService()
+
+// Export class for creating instances with user tokens
+export { GitHubService }

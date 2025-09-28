@@ -4,22 +4,36 @@ import {
   RepositorySearchFilters,
   TrendingRepository
 } from '@/types/github.types'
+import { tokenEncryption } from '@/lib/encryption'
 
 class RepositoryService {
   private baseUrl = "https://api.github.com"
-  private token: string
+  private userToken?: string
 
-  constructor() {
-    this.token = process.env.GITHUB_TOKEN || ""
+  constructor(userToken?: string) {
+    this.userToken = userToken
   }
 
   private async makeRequest(url: string, options: RequestInit = {}) {
-    if (!this.token) {
-      throw new Error("GitHub token is required. Please set GITHUB_TOKEN environment variable.")
+    // Use user token if provided, otherwise fall back to app token
+    let token = this.userToken || process.env.GITHUB_TOKEN
+
+    // If user token is encrypted, decrypt it
+    if (this.userToken && tokenEncryption.isEncrypted(this.userToken)) {
+      try {
+        token = tokenEncryption.decryptToken(this.userToken)
+      } catch (error) {
+        console.warn('Failed to decrypt user token, falling back to app token:', error)
+        token = process.env.GITHUB_TOKEN
+      }
+    }
+
+    if (!token) {
+      throw new Error("GitHub token is required. Please set GITHUB_TOKEN environment variable or provide user token.")
     }
 
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${this.token}`,
+      Authorization: `Bearer ${token}`,
       Accept: "application/vnd.github+json",
       "User-Agent": "DevQuest",
       ...(options.headers as Record<string, string> | undefined),
@@ -464,3 +478,4 @@ class RepositoryService {
 }
 
 export const repositoryService = new RepositoryService()
+export { RepositoryService }

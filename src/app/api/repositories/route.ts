@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { repositoryService } from '@/services/api/repository.service'
+import { RepositoryService } from '@/services/api/repository.service'
 import { RepositorySearchFilters } from '@/types/github.types'
+import { getCurrentUser } from '@/lib/auth-utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,9 +30,19 @@ export async function GET(request: NextRequest) {
 
     console.log(`[API] Searching repositories with filters:`, filters)
 
-    // Check if GitHub token is available
-    if (!process.env.GITHUB_TOKEN) {
-      console.error("GitHub token not found")
+    // Get current user and their GitHub token if available
+    const user = await getCurrentUser(request)
+    const userToken = user ? user.githubToken : null
+    
+    if (userToken) {
+      console.log(`[API] Using user's GitHub token for repository search`)
+    } else {
+      console.log(`[API] Using app GitHub token for repository search`)
+    }
+
+    // Check if any GitHub token is available
+    if (!userToken && !process.env.GITHUB_TOKEN) {
+      console.error("No GitHub token available")
       return NextResponse.json(
         { error: "GitHub token not configured. Please contact the administrator." }, 
         { status: 503 }
@@ -39,6 +50,8 @@ export async function GET(request: NextRequest) {
     }
 
     try {
+      // Create repository service with user token if available
+      const repositoryService = new RepositoryService(userToken || undefined)
       const response = await repositoryService.searchRepositories(filters)
       
       // Add pagination metadata

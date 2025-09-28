@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getIssues } from '@/services/api/issues.service'
 import { mockIssues } from '@/lib/constants'
+import { getCurrentUser, getUserGitHubToken } from '@/lib/auth-utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,9 +21,19 @@ export async function GET(request: NextRequest) {
     if (language && language !== "all") searchQuery += ` language:${language}`
     if (label) searchQuery += ` label:"${label}"`
 
-    // Check if GitHub token is available
-    if (!process.env.GITHUB_TOKEN) {
-      console.warn("GitHub token not found, returning mock data")
+    // Get current user and their GitHub token if available
+    const user = await getCurrentUser(request)
+    const userToken = user ? await getUserGitHubToken(user.id) : null
+    
+    if (userToken) {
+      console.log(`[API] Using user's GitHub token for issue search`)
+    } else {
+      console.log(`[API] Using app GitHub token for issue search`)
+    }
+
+    // Check if any GitHub token is available
+    if (!userToken && !process.env.GITHUB_TOKEN) {
+      console.warn("No GitHub token available, returning mock data")
       return NextResponse.json({
         total_count: mockIssues.length,
         incomplete_results: false,
@@ -33,7 +44,7 @@ export async function GET(request: NextRequest) {
     // Use real GitHub API
     try {
       console.log(`[API] Fetching issues with query: "${searchQuery}", page: ${page}, per_page: ${perPage}`)
-      const issues = await getIssues(searchQuery, page.toString(), perPage.toString())
+      const issues = await getIssues(searchQuery, page.toString(), perPage.toString(), userToken || undefined)
       
       // Add pagination metadata
       const totalCount = issues.total_count || 0

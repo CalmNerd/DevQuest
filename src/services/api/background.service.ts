@@ -1,6 +1,7 @@
 import { storage } from "../../lib/storage"
-import { githubService } from "../external/github.service"
+import { GitHubService } from "../external/github.service"
 import { timezoneService } from "../../lib/timezone"
+import { tokenEncryption } from "../../lib/encryption"
 
 class BackgroundUpdateService {
   private updateInterval: NodeJS.Timeout | null = null
@@ -138,17 +139,19 @@ class BackgroundUpdateService {
 
       console.log(`Updating data for user: ${user.username} (full fetch)`)
 
-      // // Check if we should perform incremental fetch
-      // const shouldIncremental = await storage.shouldPerformIncrementalFetch(user.id, 24) // 24 hours max age
-      // const lastFetchTime = await storage.getLastFetchTime(user.id)
+      // Get user's GitHub token if available
+      let userToken: string | null = null
+      if (user.githubToken) {
+        try {
+          userToken = tokenEncryption.safeDecryptToken(user.githubToken)
+          console.log(`Using user's GitHub token for ${user.username}`)
+        } catch (error) {
+          console.warn(`Failed to decrypt token for user ${user.username}, using app token:`, error)
+        }
+      }
 
-      // console.log(`User ${user.username}: ${shouldIncremental ? 'incremental' : 'full'} fetch (last fetch: ${lastFetchTime?.toISOString() || 'never'})`)
-      // // Fetch latest GitHub data with incremental logic
-      // const statsData = await githubService.fetchUserStatsIncremental(
-      //   user.username,
-      //   lastFetchTime || undefined,
-      //   shouldIncremental
-      // )
+      // Create GitHub service instance with user's token or app token
+      const githubService = new GitHubService(userToken || undefined)
 
       // Fetch latest GitHub data with full fetch only
       const githubData = await githubService.fetchUserData(user.username)

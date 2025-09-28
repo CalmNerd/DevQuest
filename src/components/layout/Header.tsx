@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { SidebarTrigger } from '../ui/sidebar'
 import { useSidebar } from '../ui/sidebar'
 import { motion } from 'framer-motion'
+import { AuthSection } from '../auth'
 
 // context error fix
 const useSidebarSafe = () => {
@@ -20,7 +21,7 @@ const Header = () => {
     const sidebarContext = useSidebarSafe()
 
     return (
-        <nav className="w-full border-b border-border bg-card/50 sticky top-0 z-50 backdrop-blur-sm">
+        <nav className="w-full border-b border-border bg-card/50 sticky top-0 z-30 backdrop-blur-sm">
             <div className="px-2 py-4">
                 <div className="flex items-center justify-between">
                     {(pathname.startsWith('/repositories') && sidebarContext?.state === "collapsed") ?
@@ -55,7 +56,9 @@ const Header = () => {
                         <Button variant="ghost" asChild>
                             <Link href="/issues-list">Hunt Issues</Link>
                         </Button>
-                        <Button variant="outline">Sign In</Button>
+
+                        {/* Authentication Section */}
+                        <AuthSection returnUrl={pathname} />
                     </div>
                 </div>
             </div>
