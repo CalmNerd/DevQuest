@@ -28,7 +28,7 @@ class BackgroundUpdateService {
   }
 
   //  Stop the background update service
-    
+
   stop(): void {
     if (this.updateInterval) {
       clearInterval(this.updateInterval)
@@ -38,7 +38,7 @@ class BackgroundUpdateService {
   }
 
   //  Trigger an immediate update (for manual control)
-    
+
   triggerUpdate(): void {
     if (this.isUpdating) {
       console.log("Update already in progress, cannot trigger another")
@@ -50,7 +50,7 @@ class BackgroundUpdateService {
   }
 
   //  Perform the background update for all users
-    
+
   private async performUpdate(): Promise<void> {
     if (this.isUpdating) {
       console.log("Background update already in progress, skipping...")
@@ -117,7 +117,7 @@ class BackgroundUpdateService {
   }
 
   //  Get all users from the database
-    
+
   private async getAllUsers(): Promise<any[]> {
     try {
       // This method needs to be implemented in storage.ts
@@ -128,7 +128,7 @@ class BackgroundUpdateService {
     }
   }
 
-  //  Update data for a single user with incremental fetching logic
+  //  Update data for a single user with full fetch only
   private async updateUserData(user: any): Promise<"success" | "skipped"> {
     try {
       if (!user.username) {
@@ -136,21 +136,23 @@ class BackgroundUpdateService {
         return "skipped"
       }
 
-      console.log(`Updating data for user: ${user.username}`)
+      console.log(`Updating data for user: ${user.username} (full fetch)`)
 
-      // Check if we should perform incremental fetch
-      const shouldIncremental = await storage.shouldPerformIncrementalFetch(user.id, 24) // 24 hours max age
-      const lastFetchTime = await storage.getLastFetchTime(user.id)
+      // // Check if we should perform incremental fetch
+      // const shouldIncremental = await storage.shouldPerformIncrementalFetch(user.id, 24) // 24 hours max age
+      // const lastFetchTime = await storage.getLastFetchTime(user.id)
 
-      console.log(`User ${user.username}: ${shouldIncremental ? 'incremental' : 'full'} fetch (last fetch: ${lastFetchTime?.toISOString() || 'never'})`)
+      // console.log(`User ${user.username}: ${shouldIncremental ? 'incremental' : 'full'} fetch (last fetch: ${lastFetchTime?.toISOString() || 'never'})`)
+      // // Fetch latest GitHub data with incremental logic
+      // const statsData = await githubService.fetchUserStatsIncremental(
+      //   user.username,
+      //   lastFetchTime || undefined,
+      //   shouldIncremental
+      // )
 
-      // Fetch latest GitHub data with incremental logic
+      // Fetch latest GitHub data with full fetch only
       const githubData = await githubService.fetchUserData(user.username)
-      const statsData = await githubService.fetchUserStatsIncremental(
-        user.username, 
-        lastFetchTime || undefined, 
-        shouldIncremental
-      )
+      const statsData = await githubService.fetchUserStats(user.username)
 
       // Update user profile if needed
       await storage.upsertUser({
@@ -169,11 +171,11 @@ class BackgroundUpdateService {
         githubCreatedAt: githubData.created_at ? new Date(githubData.created_at) : undefined,
       })
 
-      // Update GitHub stats with incremental metadata
+      // Update GitHub stats with full fetch data
       await storage.upsertGithubStats({
         userId: user.id,
         ...statsData,
-        lastIncrementalFetch: (statsData as any).isIncrementalFetch ? new Date() : undefined,
+        // lastIncrementalFetch: (statsData as any).isIncrementalFetch ? new Date() : undefined,
       })
 
       // Check for new achievements
@@ -182,9 +184,11 @@ class BackgroundUpdateService {
       // Update leaderboards for all active sessions
       await this.updateUserLeaderboards(user.id, statsData)
 
-      const fetchType = (statsData as any).isIncrementalFetch ? 'incremental' : 'full'
-      const eventsCount = (statsData as any).recentEventsCount || 0
-      console.log(`Successfully updated user: ${user.username} (${fetchType} fetch, ${eventsCount} recent events)`)
+      // const fetchType = (statsData as any).isIncrementalFetch ? 'incremental' : 'full'
+      // const eventsCount = (statsData as any).recentEventsCount || 0
+      // console.log(`Successfully updated user: ${user.username} (${fetchType} fetch, ${eventsCount} recent events)`)
+
+      console.log(`Successfully updated user: ${user.username} (full fetch)`)
       return "success"
     } catch (error) {
       console.error(`Error updating user ${user.username}:`, error)
@@ -267,7 +271,7 @@ class BackgroundUpdateService {
 
       // Update leaderboards for each session type
       const sessionTypes = ['daily', 'weekly', 'monthly', 'yearly', 'overall'] as const
-      
+
       for (const sessionType of sessionTypes) {
         try {
           // Get active session for this type
@@ -297,7 +301,7 @@ class BackgroundUpdateService {
     }
   }
 
-//  Get active session for a specific type 
+  //  Get active session for a specific type 
   private async getActiveSession(sessionType: string): Promise<any | null> {
     try {
       const { db } = await import("../database/db-http.service")
