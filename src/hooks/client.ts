@@ -1,4 +1,3 @@
-export { useGitHubStats } from './useGitHubStats'
 export { useDebounce } from './useDebounce'
 export { useIsMobile } from './useMobile'
 export { useRepositories } from './useRepositories'
