@@ -40,22 +40,18 @@ export async function GET(request: NextRequest, { params }: { params: { username
     }
 
     try {
-      // Check if user exists in database for incremental fetching
-      const existingUser = await storage.getUserByUsername(username)
-      const shouldIncremental = existingUser ? await storage.shouldPerformIncrementalFetch(existingUser.id, 24) : false
-      const lastFetchTime = existingUser ? await storage.getLastFetchTime(existingUser.id) : undefined
-
-      console.log(`User ${username}: ${shouldIncremental ? 'incremental' : 'full'} fetch (last fetch: ${lastFetchTime?.toISOString() || 'never'})`)
+      // Always perform full fetch
+      console.log(`User ${username}: performing full fetch`)
 
       // Add request ID to track concurrent requests
       const requestId = Math.random().toString(36).substring(7)
-      console.log(`[${requestId}] Starting fetch for ${username}`)
+      console.log(`[${requestId}] Starting full fetch for ${username}`)
 
-      // Try to fetch enhanced stats with incremental logic
+      // Try to fetch enhanced stats with full fetch
       const startTime = Date.now()
-      statsData = await githubService.fetchUserStatsIncremental(username, lastFetchTime || undefined, shouldIncremental)
+      statsData = await githubService.fetchUserStats(username)
       const fetchTime = Date.now() - startTime
-      console.log(`[${requestId}] Successfully fetched user stats for ${username} (${shouldIncremental ? 'incremental' : 'full'} fetch) in ${fetchTime}ms`)
+      console.log(`[${requestId}] Successfully fetched user stats for ${username} (full fetch) in ${fetchTime}ms`)
     } catch (error) {
       console.error(` Failed to fetch user stats, using fallback:`, error)
       hasErrors = true
@@ -137,6 +133,9 @@ export async function GET(request: NextRequest, { params }: { params: { username
 
     const powerLevel = getPowerProgress(statsData.points)
 
+    // Generate a unique user ID based on GitHub ID or username
+    const userId = githubData.id?.toString() || `user_${username.toLowerCase()}`
+
     const profile = {
       // Basic GitHub data
       id: githubData.id,
@@ -203,7 +202,8 @@ export async function GET(request: NextRequest, { params }: { params: { username
       // Contribution graph
       contributionGraph: statsData.contributionGraph || { weeks: [], totalContributions: 0 },
 
-      achievements: generateBasicAchievements(statsData, githubData, repos) || [],
+      achievements: [], //handled by leveled achievements
+      achievementProgress: await getUserAchievementProgress(userId),
 
       // Metadata
       cached: false,
@@ -214,11 +214,11 @@ export async function GET(request: NextRequest, { params }: { params: { username
     console.log(` Successfully built profile for ${username} with ${hasErrors ? "fallback" : "full"} data`)
 
     // Save data to database (async, don't wait for completion)
-    saveUserDataToDatabase(username, githubData, statsData, repos).catch((error) => {
+    saveUserDataToDatabase(userId, username, githubData, statsData, repos).catch((error) => {
       console.error(` Failed to save data for ${username}:`, error)
     })
 
-      return NextResponse.json(profile)
+      return profile
     })()
 
     // Store the promise and clean up when done
@@ -226,7 +226,7 @@ export async function GET(request: NextRequest, { params }: { params: { username
     
     try {
       const result = await requestPromise
-      return result
+      return NextResponse.json(result)
     } finally {
       // Clean up the ongoing request
       ongoingRequests.delete(username)
@@ -248,35 +248,21 @@ export async function GET(request: NextRequest, { params }: { params: { username
   }
 }
 
-function generateBasicAchievements(statsData: any, githubData: any, repos: any[]): string[] {
-  const achievements: string[] = []
-
-  // Basic achievements based on available data
-  if (statsData.totalStars > 0) achievements.push("first-star")
-  if (statsData.totalStars >= 10) achievements.push("star-collector")
-  if (statsData.totalStars >= 100) achievements.push("star-master")
-
-  if (repos.length > 0) achievements.push("first-repo")
-  if (repos.length >= 10) achievements.push("repo-creator")
-  if (repos.length >= 50) achievements.push("prolific-creator")
-
-  if (githubData.followers >= 10) achievements.push("social-butterfly")
-  if (githubData.followers >= 100) achievements.push("influencer")
-
-  if (statsData.languageCount >= 3) achievements.push("polyglot")
-  if (statsData.languageCount >= 5) achievements.push("language-master")
-
-  // Account age achievements
-  const accountAge = new Date().getFullYear() - new Date(githubData.created_at).getFullYear()
-  if (accountAge >= 1) achievements.push("veteran")
-  if (accountAge >= 5) achievements.push("old-timer")
-
-  return achievements
+async function getUserAchievementProgress(userId: string): Promise<any[]> {
+  try {
+    const { achievementService } = await import("@/services/api/achievement.service")
+    return await achievementService.getUserAchievementProgress(userId)
+  } catch (error) {
+    console.error("Failed to get achievement progress:", error)
+    return []
+  }
 }
+
 
 //  Save user data to database asynchronously
 //  This function handles all database operations for user profiles 
 async function saveUserDataToDatabase(
+  userId: string,
   username: string,
   githubData: any,
   statsData: any,
@@ -284,9 +270,6 @@ async function saveUserDataToDatabase(
 ): Promise<void> {
   try {
     console.log(` Starting database save for ${username}`)
-
-    // Generate a unique user ID based on GitHub ID or username
-    const userId = githubData.id?.toString() || `user_${username.toLowerCase()}`
 
     // Upsert user profile data
     await storage.upsertUser({
@@ -344,8 +327,7 @@ async function saveUserDataToDatabase(
       languageCount: statsData.languageCount || 0,
       topLanguagePercentage: statsData.topLanguagePercentage || 0,
       rareLanguageRepos: statsData.rareLanguageRepos || 0,
-      // Incremental metadata
-      lastIncrementalFetch: statsData.isIncrementalFetch ? new Date() : undefined,
+      lastFetchedAt: new Date(),
     })
 
     console.log(` Saved GitHub stats for ${username}`)

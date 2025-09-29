@@ -15,6 +15,13 @@ import {
   ExternalLink,
   Trophy,
   TrendingUp,
+  Zap,
+  Crown,
+  Award,
+  Target,
+  GitBranch,
+  Flame,
+  Shield,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,10 +29,57 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { BadgeDisplay, BadgeGrid } from '@/components/features/badge-display'
 import { ContributionGraph } from '@/components/features/contribution-graph'
+import { AchievementProgressDisplay } from '@/components/features/achievement-progress'
 import { ProfileData } from "@/types"
 import { formatCacheDate, formatProfileDate } from "@/lib/date-formatter"
+
+// Helper functions for achievements
+const getIconComponent = (iconName: string) => {
+  const iconMap: Record<string, any> = {
+    "trophy": Trophy,
+    "star": Star,
+    "zap": Zap,
+    "crown": Crown,
+    "award": Award,
+    "target": Target,
+    "users": Users,
+    "git-branch": GitBranch,
+    "flame": Flame,
+    "shield": Shield,
+    "git-commit": GitBranch,
+    "calendar": Target,
+    "heart": Star,
+    "sparkles": Star,
+    "folder-plus": GitBranch,
+    "layers": GitBranch,
+    "code": GitBranch,
+    "languages": GitBranch,
+    "book-open": GitBranch,
+    "check-circle": Target,
+    "git-merge": GitBranch,
+    "eye": Target,
+    "trending-up": Zap,
+    "rocket": Zap,
+    "graduation-cap": Award,
+    "sunrise": Star,
+    "moon": Star,
+    "medal": Award,
+    "brain": Award,
+    "skull": Award,
+  }
+  return iconMap[iconName] || Trophy
+}
+
+const getRarityColor = (rarity: string) => {
+  const rarityColors = {
+    common: "border-gray-400 bg-gray-400/10 text-gray-400",
+    rare: "border-blue-400 bg-blue-400/10 text-blue-400",
+    epic: "border-purple-400 bg-purple-400/10 text-purple-400",
+    legendary: "border-yellow-400 bg-yellow-400/10 text-yellow-400",
+  }
+  return rarityColors[rarity as keyof typeof rarityColors] || rarityColors.common
+}
 
 export default function ProfilePage() {
   const params = useParams()
@@ -190,10 +244,42 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {profile.achievements && profile.achievements.length > 0 && (
+                  {profile.achievementProgress && profile.achievementProgress.length > 0 && (
                     <div className="mb-4">
-                      <p className="mb-2 text-sm font-medium text-muted-foreground">Achievements</p>
-                      <BadgeDisplay badgeIds={profile.achievements} maxDisplay={8} />
+                      <p className="mb-2 text-sm font-medium text-muted-foreground">Top Achievements</p>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.achievementProgress
+                          .filter(achievement => achievement.isUnlocked)
+                          .map(achievement => ({
+                            ...achievement,
+                            // Use level for sorting (non-leveled achievements get level 1 for sorting)
+                            sortLevel: achievement.isLeveled && achievement.currentLevel !== undefined 
+                              ? achievement.currentLevel 
+                              : 1
+                          }))
+                          .sort((a, b) => b.sortLevel - a.sortLevel)
+                          .slice(0, 6)
+                          .map((achievement) => {
+                            const IconComponent = getIconComponent(achievement.achievement.icon)
+                            const rarityColor = getRarityColor(achievement.achievement.rarity)
+                            
+                            return (
+                              <div
+                                key={achievement.achievement.id}
+                                className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2 text-xs ${rarityColor}`}
+                                title={`${achievement.achievement.name} - ${achievement.achievement.description}`}
+                              >
+                                <IconComponent className="h-4 w-4" />
+                                <span className="font-medium">{achievement.achievement.name}</span>
+                                <span className="text-muted-foreground">
+                                  {(achievement as any).isLeveled && (achievement as any).currentLevel !== undefined 
+                                    ? `Lv.${(achievement as any).currentLevel}` 
+                                    : ''}
+                                </span>
+                              </div>
+                            )
+                          })}
+                      </div>
                     </div>
                   )}
 
@@ -628,10 +714,11 @@ export default function ProfilePage() {
             </TabsContent>
 
             <TabsContent value="achievements" className="space-y-6">
-              <BadgeGrid
-                badgeIds={profile.achievements || []}
-                title="Earned Achievements"
-                emptyMessage="No achievements unlocked yet. Keep contributing to earn your first badge!"
+              <AchievementProgressDisplay
+                achievements={profile.achievementProgress as any || []}
+                title="Achievement Progress"
+                showProgress={true}
+                groupBy="category"
               />
             </TabsContent>
 

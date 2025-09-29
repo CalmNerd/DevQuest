@@ -36,6 +36,8 @@ export interface IStorage {
   getUserAchievements(userId: string): Promise<UserAchievement[]>
   unlockAchievement(userId: string, achievementId: number): Promise<UserAchievement>
   checkAndUnlockAchievements(userId: string): Promise<UserAchievement[]>
+  updateUserAchievementProgress(userId: string, achievementId: number, progress: number, maxProgress: number, currentLevel?: number, currentValue?: number, nextLevelRequirement?: number): Promise<void>
+  seedAchievements(): Promise<void>
 
   // Leaderboard operations
   getLeaderboard(period: string, limit?: number): Promise<Leaderboard[]>
@@ -145,157 +147,91 @@ export class DatabaseStorage implements IStorage {
   }
 
   async checkAndUnlockAchievements(userId: string): Promise<UserAchievement[]> {
-    const userStats = await this.getGithubStats(userId)
-    if (!userStats) return []
+    // Use the new achievement service for evaluation
+    const { achievementService } = await import("@/services/api/achievement.service")
+    return await achievementService.evaluateAndUnlockAchievements(userId)
+  }
 
-    const allAchievements = await this.getAllAchievements()
-    const userUnlockedAchievements = await this.getUserAchievements(userId)
-    const unlockedIds = userUnlockedAchievements.map((ua) => ua.achievementId)
+  async updateUserAchievementProgress(
+    userId: string, 
+    achievementId: number, 
+    progress: number, 
+    maxProgress: number, 
+    currentLevel?: number, 
+    currentValue?: number, 
+    nextLevelRequirement?: number
+  ): Promise<void> {
+    await db
+      .insert(userAchievements)
+      .values({
+        userId,
+        achievementId,
+        progress,
+        maxProgress,
+        currentLevel: currentLevel || 0,
+        currentValue: currentValue || 0,
+        nextLevelRequirement: nextLevelRequirement || 1,
+        unlockedAt: null, // Not unlocked yet
+      })
+      .onConflictDoUpdate({
+        target: [userAchievements.userId, userAchievements.achievementId],
+        set: {
+          progress,
+          maxProgress,
+          currentLevel: currentLevel || 0,
+          currentValue: currentValue || 0,
+          nextLevelRequirement: nextLevelRequirement || 1,
+          updatedAt: new Date(),
+        },
+      })
+  }
 
-    const newlyUnlocked: UserAchievement[] = []
-
-    for (const achievement of allAchievements) {
-      if (unlockedIds.includes(achievement.id)) continue
-
-      const criteria = achievement.criteria as any
-      let shouldUnlock = false
-
-      // Check various achievement criteria based on category
-      switch (achievement.category) {
-        // Legacy categories
-        case "commits":
-          if (criteria.totalCommits && (userStats.yearlyContributions || 0) >= criteria.totalCommits) {
-            shouldUnlock = true
-          }
-          break
-        case "streak":
-          if (criteria.currentStreak && (userStats.currentStreak || 0) >= criteria.currentStreak) {
-            shouldUnlock = true
-          }
-          if (criteria.longestStreak && (userStats.longestStreak || 0) >= criteria.longestStreak) {
-            shouldUnlock = true
-          }
-          break
-        case "stars":
-          if (criteria.totalStars && (userStats.totalStars || 0) >= criteria.totalStars) {
-            shouldUnlock = true
-          }
-          break
-        case "followers":
-          if (criteria.followers && (userStats.followers || 0) >= criteria.followers) {
-            shouldUnlock = true
-          }
-          break
-        case "repositories":
-          if (criteria.totalRepositories && (userStats.totalRepositories || 0) >= criteria.totalRepositories) {
-            shouldUnlock = true
-          }
-          break
-
-        // New comprehensive categories
-        case "commit_streak":
-          if (criteria.currentStreak && (userStats.currentStreak || 0) >= criteria.currentStreak) {
-            shouldUnlock = true
-          }
-          break
-        case "total_commits":
-          if (criteria.totalCommits && (userStats.totalCommits || 0) >= criteria.totalCommits) {
-            shouldUnlock = true
-          }
-          break
-        case "meaningful_commits":
-          if (criteria.meaningfulCommits && (userStats.meaningfulCommits || 0) >= criteria.meaningfulCommits) {
-            shouldUnlock = true
-          }
-          break
-        case "external_prs":
-          if (criteria.mergedPullRequests && (userStats.mergedPullRequests || 0) >= criteria.mergedPullRequests) {
-            shouldUnlock = true
-          }
-          break
-        case "closed_issues":
-          if (criteria.closedIssues && (userStats.closedIssues || 0) >= criteria.closedIssues) {
-            shouldUnlock = true
-          }
-          break
-        case "pr_reviews":
-          if (criteria.totalReviews && (userStats.totalReviews || 0) >= criteria.totalReviews) {
-            shouldUnlock = true
-          }
-          break
-        case "external_contributors":
-          if (criteria.externalContributors && (userStats.externalContributors || 0) >= criteria.externalContributors) {
-            shouldUnlock = true
-          }
-          break
-        case "repo_stars":
-          if (criteria.totalStars && (userStats.totalStars || 0) >= criteria.totalStars) {
-            shouldUnlock = true
-          }
-          break
-        case "repo_forks":
-          if (criteria.totalForks && (userStats.totalForks || 0) >= criteria.totalForks) {
-            shouldUnlock = true
-          }
-          break
-        case "dependency_usage":
-          if (criteria.dependencyUsage && (userStats.dependencyUsage || 0) >= criteria.dependencyUsage) {
-            shouldUnlock = true
-          }
-          break
-        case "language_count":
-          if (criteria.languageCount && (userStats.languageCount || 0) >= criteria.languageCount) {
-            shouldUnlock = true
-          }
-          break
-        case "top_language_percentage":
-          if (
-            criteria.topLanguagePercentage &&
-            (userStats.topLanguagePercentage || 0) >= criteria.topLanguagePercentage
-          ) {
-            shouldUnlock = true
-          }
-          break
-        case "rare_languages":
-          if (criteria.rareLanguageRepos && (userStats.rareLanguageRepos || 0) >= criteria.rareLanguageRepos) {
-            shouldUnlock = true
-          }
-          break
-        case "activity_diversity":
-          if (criteria.activityAreas) {
-            const areas = []
-            if ((userStats.totalCommits || 0) > 0) areas.push("commits")
-            if ((userStats.totalIssues || 0) > 0) areas.push("issues")
-            if ((userStats.totalPullRequests || 0) > 0) areas.push("prs")
-            if ((userStats.totalReviews || 0) > 0) areas.push("reviews")
-            if (areas.length >= criteria.activityAreas) {
-              shouldUnlock = true
-            }
-          }
-          break
-        case "net_issue_fixes":
-          if (criteria.netIssueFixes) {
-            const netFixes = (userStats.closedIssues || 0) - (userStats.totalIssues || 0)
-            if (netFixes >= criteria.netIssueFixes) {
-              shouldUnlock = true
-            }
-          }
-          break
-        case "external_prs_on_repos":
-          // This would need additional data about PRs on user's repos
-          // For now, we'll skip this category
-          break
-      }
-
-      if (shouldUnlock) {
-        const unlocked = await this.unlockAchievement(userId, achievement.id)
-        if (unlocked) {
-          newlyUnlocked.push(unlocked)
-        }
+  async seedAchievements(): Promise<void> {
+    const { LeveledAchievementDefinitionsService } = await import("@/services/api/leveled-achievement-definitions.service")
+    const definitions = LeveledAchievementDefinitionsService.getAllDefinitions()
+    
+    console.log(`Seeding ${definitions.length} achievement definitions...`)
+    
+    for (const definition of definitions) {
+      try {
+        await db
+          .insert(achievements)
+          .values({
+            name: definition.name,
+            description: definition.description,
+            category: definition.category,
+            icon: definition.icon,
+            rarity: definition.rarity,
+            tier: definition.tier,
+            criteria: definition.criteria,
+            points: definition.points,
+            isLeveled: definition.isLeveled || false,
+            isGitHubNative: definition.isGitHubNative || false,
+            source: definition.source || "custom",
+            isActive: definition.isActive || true,
+          })
+          .onConflictDoUpdate({
+            target: [achievements.category],
+            set: {
+              name: definition.name,
+              description: definition.description,
+              icon: definition.icon,
+              rarity: definition.rarity,
+              tier: definition.tier,
+              criteria: definition.criteria,
+              points: definition.points,
+              isLeveled: definition.isLeveled || false,
+              isGitHubNative: definition.isGitHubNative || false,
+              source: definition.source || "custom",
+              isActive: definition.isActive || true,
+            },
+          })
+      } catch (error) {
+        console.error(`Failed to seed achievement "${definition.name}":`, error)
       }
     }
-
-    return newlyUnlocked
+    
+    console.log("Achievement seeding completed")
   }
 
   // Leaderboard operations

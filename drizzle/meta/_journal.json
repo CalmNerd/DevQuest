@@ -29,6 +29,20 @@
       "when": 1758960759935,
       "tag": "0003_confused_gabe_jones",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1759137605148,
+      "tag": "0004_early_pestilence",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1759153207981,
+      "tag": "0005_vengeful_colossus",
+      "breakpoints": true
     }
   ]
 }

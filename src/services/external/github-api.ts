@@ -9,6 +9,7 @@ interface UserProfile {
   longestStreak: number
   totalContributions: number
   achievements: string[]
+  achievementProgress?: any[]
 }
 
 export class GitHubAPI {
@@ -101,11 +102,7 @@ export class GitHubAPI {
       longestStreak: Math.floor(Math.random() * 200),
     }
 
-    return BadgeSystem.evaluateBadges({
-      ...profile,
-      topLanguages: {},
-      achievements: []
-    })
+    return []
   }
 }
 
@@ -114,19 +111,3 @@ export const createAuthenticatedAPI = (token: string) => new GitHubAPI(token)
 
 export const githubApiService = githubAPI
 
-class BadgeSystem {
-  static evaluateBadges(profile: UserProfile): string[] {
-    const achievements: string[] = []
-
-    if (profile.user.followers > 100) achievements.push("Popular Developer")
-    if (profile.user.public_repos > 50) achievements.push("Prolific Creator")
-    if (profile.totalStars > 1000) achievements.push("Star Collector")
-    if (profile.repos.some((repo) => repo.stargazers_count > 100)) achievements.push("Viral Repository")
-    if (profile.user.followers > profile.user.following) achievements.push("Influencer")
-
-    const accountAge = new Date().getFullYear() - new Date(profile.user.created_at).getFullYear()
-    if (accountAge >= 5) achievements.push("Veteran Developer")
-
-    return achievements
-  }
-}

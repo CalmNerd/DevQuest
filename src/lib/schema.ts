@@ -1,5 +1,4 @@
 import { index, jsonb, pgTable, timestamp, uniqueIndex, varchar, integer, text, serial, boolean } from "drizzle-orm/pg-core"
-import { sql } from "drizzle-orm"
 import { createInsertSchema } from "drizzle-zod"
 import { relations } from "drizzle-orm"
 
@@ -96,9 +95,13 @@ export const achievements = pgTable("achievements", {
   category: varchar("category").notNull(), // commit_streak, languages, stars, contributions, etc.
   icon: varchar("icon").notNull(),
   rarity: varchar("rarity").notNull().default("common"), // common, rare, epic, legendary
-  tier: varchar("tier").notNull().default("bronze"), // bronze, silver, gold, legendary
+  tier: varchar("tier").notNull().default("bronze"), // bronze, silver, gold, platinum, diamond, legendary
   criteria: jsonb("criteria").notNull(), // JSON object defining unlock criteria
   points: integer("points").default(0), // Points awarded for unlocking this achievement
+  isLeveled: boolean("is_leveled").default(false), // Whether this achievement supports infinite levels
+  isGitHubNative: boolean("is_github_native").default(false), // GitHub native achievements
+  source: varchar("source").default("custom"), // github, custom, trending, community
+  isActive: boolean("is_active").default(true), // Whether achievement is active
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 })
 
@@ -111,10 +114,16 @@ export const userAchievements = pgTable("user_achievements", {
   achievementId: integer("achievement_id")
     .notNull()
     .references(() => achievements.id, { onDelete: "cascade" }),
-  unlockedAt: timestamp("unlocked_at", { withTimezone: true }).defaultNow(),
+  unlockedAt: timestamp("unlocked_at", { withTimezone: true }),
   progress: integer("progress").default(0), // Current progress towards achievement
   maxProgress: integer("max_progress").default(1), // Target progress needed
-})
+  currentLevel: integer("current_level").default(1), // Current level for leveled achievements
+  currentValue: integer("current_value").default(0), // Current raw value (followers, stars, etc.)
+  nextLevelRequirement: integer("next_level_requirement").default(1), // Value needed for next level
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_user_achievement_unique").on(table.userId, table.achievementId),
+])
 
 // Leaderboard sessions table for managing contest-like sessions
 export const leaderboardSessions = pgTable(

@@ -231,6 +231,7 @@ export interface UserProfile {
   longestStreak: number
   totalContributions: number
   achievements: string[]
+  achievementProgress?: any[]
 }
 
 
@@ -324,10 +325,35 @@ export interface ProfileData {
 
   // Achievements
   achievements: string[]
+  achievementProgress: Array<{
+    achievement: {
+      id: number
+      name: string
+      description: string
+      category: string
+      icon: string
+      rarity: "common" | "rare" | "epic" | "legendary"
+      tier: "bronze" | "silver" | "gold" | "platinum" | "diamond" | "legendary"
+      points: number
+    }
+    progress: number
+    maxProgress: number
+    progressPercentage: number
+    isUnlocked: boolean
+    unlockedAt?: Date | null
+    nextMilestone?: number
+    description: string
+    isLeveled?: boolean
+    currentLevel?: number
+    currentValue?: number
+    nextLevelRequirement?: number
+    animationIntensity?: number
+  }>
 
   // Metadata
   cached: boolean
   lastUpdated: string
+  hasApiErrors: boolean
 }
 
 export interface GitHubStatsData {

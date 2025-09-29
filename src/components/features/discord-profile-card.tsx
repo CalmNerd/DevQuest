@@ -22,9 +22,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { BadgeDisplay } from "./badge-display"
 import { formatProfileDate } from "@/lib/date-formatter"
 import type { UserProfile } from "@/types/github.types"
+import type { AchievementProgress } from "@/services/api/achievement.service"
 
 interface DiscordProfileCardProps {
   profile: UserProfile
@@ -127,13 +127,28 @@ export function DiscordProfileCard({ profile, isOpen, onClose, position }: Disco
                   </div>
                 </div>
 
-                {/* Badges */}
-                {profile.achievements.length > 0 && (
+                {/* Achievements */}
+                {profile.achievementProgress && profile.achievementProgress.length > 0 && (
                   <div className="mb-4">
                     <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Achievements
+                      Top Achievements
                     </p>
-                    <BadgeDisplay badgeIds={profile.achievements} size="sm" maxDisplay={6} />
+                    <div className="flex flex-wrap gap-1">
+                      {profile.achievementProgress
+                        .filter((achievement: AchievementProgress) => achievement.isUnlocked)
+                        .sort((a: AchievementProgress, b: AchievementProgress) => (b.achievement.points || 0) - (a.achievement.points || 0))
+                        .slice(0, 6)
+                        .map((achievement: AchievementProgress) => (
+                          <Badge
+                            key={achievement.achievement.id}
+                            variant="secondary"
+                            className="text-xs"
+                            title={`${achievement.achievement.name} - ${achievement.achievement.description}`}
+                          >
+                            {achievement.achievement.name}
+                          </Badge>
+                        ))}
+                    </div>
                   </div>
                 )}
 
