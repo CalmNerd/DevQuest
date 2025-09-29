@@ -41,6 +41,7 @@ class SessionManagementService {
   private cronJobs: Map<string, any> = new Map()
   private isRunning = false
   private activeSessions: Map<string, LeaderboardSession> = new Map()
+  private initializing = false // Prevent concurrent initialization
 
   //  Start the session management service
   async start(): Promise<void> {
@@ -86,10 +87,20 @@ class SessionManagementService {
   //  Initialize or create active sessions
     
   private async initializeSessions(): Promise<void> {
+    if (this.initializing) {
+      console.log('Session initialization already in progress, skipping...')
+      return
+    }
+    
+    this.initializing = true
     console.log('Initializing leaderboard sessions...')
     
-    for (const [sessionType, config] of Object.entries(SESSION_CONFIGS)) {
-      await this.ensureActiveSession(sessionType as SessionType)
+    try {
+      for (const [sessionType, config] of Object.entries(SESSION_CONFIGS)) {
+        await this.ensureActiveSession(sessionType as SessionType)
+      }
+    } finally {
+      this.initializing = false
     }
   }
 
@@ -97,13 +108,20 @@ class SessionManagementService {
   private async ensureActiveSession(sessionType: SessionType): Promise<void> {
     const config = SESSION_CONFIGS[sessionType as keyof typeof SESSION_CONFIGS]
     
-    // Check if there's already an active session
+    // Generate expected session key based on current timezone
+    const expectedSessionKey = timezoneService.getSessionKey(sessionType)
+    const expectedStartDate = timezoneService.getSessionStartDate(sessionType)
+    const expectedEndDate = timezoneService.getSessionEndDate(sessionType)
+    
+    // Check if there's already an ACTIVE session with the CORRECT session key
+    // This prevents duplicate sessions for the same period
     const existingSession = await db
       .select()
       .from(leaderboardSessions)
       .where(
         and(
           eq(leaderboardSessions.sessionType, sessionType),
+          eq(leaderboardSessions.sessionKey, expectedSessionKey), // Match exact session key
           eq(leaderboardSessions.isActive, true)
         )
       )
@@ -116,16 +134,27 @@ class SessionManagementService {
       return
     }
 
-    // Create new session using timezone service
-    const sessionKey = timezoneService.getSessionKey(sessionType)
-    const startDate = timezoneService.getSessionStartDate(sessionType)
-    const endDate = timezoneService.getSessionEndDate(sessionType)
+    // This prevents duplicate sessions from multiple initialization attempts
+    await db
+      .update(leaderboardSessions)
+      .set({
+        isActive: false,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(leaderboardSessions.sessionType, sessionType),
+          eq(leaderboardSessions.isActive, true)
+        )
+      )
+
+    console.log(`Deactivated any existing ${sessionType} session before creating new one`)
 
     const newSession: InsertLeaderboardSession = {
       sessionType,
-      sessionKey,
-      startDate,
-      endDate,
+      sessionKey: expectedSessionKey,
+      startDate: expectedStartDate,
+      endDate: expectedEndDate,
       isActive: true,
       updateIntervalMinutes: config.updateIntervalMinutes,
       nextUpdateAt: new Date(Date.now() + config.updateIntervalMinutes * 60 * 1000),
@@ -137,7 +166,7 @@ class SessionManagementService {
       .returning()
 
     this.activeSessions.set(sessionType, createdSession)
-    console.log(`Created new ${sessionType} session: ${sessionKey}`)
+    console.log(`Created new ${sessionType} session: ${expectedSessionKey}`)
   }
 
   //  Start interval-based scheduling for all session types

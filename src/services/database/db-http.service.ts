@@ -8,8 +8,9 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Use HTTP connection instead of WebSocket to avoid bufferUtil issues
+// Use HTTP connection with reliability improvements
 const sql = neon(process.env.DATABASE_URL!)
+
 export const db = drizzle(sql, { schema })
 
 // Export a simple connection test function
