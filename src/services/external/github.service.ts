@@ -498,7 +498,8 @@ class GitHubService {
     let reposWithForks = 0
     let rareLanguageRepos = 0
 
-    // Process repositories
+    // Process repositories (includes private repos if user granted repo access)
+    // GitHub API will only return private repos if the token has 'repo' scope
     user.repositories.nodes.forEach((repo: any) => {
       totalStars += repo.stargazerCount
       totalForks += repo.forkCount
@@ -506,8 +507,9 @@ class GitHubService {
       if (repo.stargazerCount > 0) reposWithStars++
       if (repo.forkCount > 0) reposWithForks++
 
-      // Count repositories user contributed to (not owned)
-      if (repo.isFork || !repo.isPrivate) {
+      // Count forked repositories as "contributed to"
+      // Note: Private repos are included automatically if user has granted repo access
+      if (repo.isFork) {
         contributedTo++
       }
 

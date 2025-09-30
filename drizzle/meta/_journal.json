@@ -43,6 +43,13 @@
       "when": 1759153207981,
       "tag": "0005_vengeful_colossus",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1759203645166,
+      "tag": "0006_fine_doctor_spectrum",
+      "breakpoints": true
     }
   ]
 }

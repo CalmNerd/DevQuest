@@ -30,13 +30,11 @@ export async function POST(request: NextRequest) {
   try {
     const returnUrl = request.nextUrl.searchParams.get('returnUrl') || '/'
 
-    // In a real Next.js app with Passport, you'd use middleware
-    // For now, we'll redirect to GitHub directly
     const githubAuthUrl = new URL('https://github.com/login/oauth/authorize')
     githubAuthUrl.searchParams.set('client_id', process.env.GITHUB_CLIENT_ID!)
     githubAuthUrl.searchParams.set('redirect_uri', process.env.GITHUB_CALLBACK_URL || `${process.env.NEXTAUTH_URL}/api/auth/github/callback`)
-    githubAuthUrl.searchParams.set('scope', 'read:user user:email repo read:org')
-    githubAuthUrl.searchParams.set('state', returnUrl) // Store return URL in state
+    githubAuthUrl.searchParams.set('scope', 'read:user user:email')
+    githubAuthUrl.searchParams.set('state', returnUrl)
 
     return NextResponse.redirect(githubAuthUrl.toString())
   } catch (error) {

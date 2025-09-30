@@ -30,7 +30,7 @@ passport.use(new GitHubStrategy({
   clientID: process.env.GITHUB_CLIENT_ID!,
   clientSecret: process.env.GITHUB_CLIENT_SECRET!,
   callbackURL: process.env.GITHUB_CALLBACK_URL || '/api/auth/github/callback',
-  scope: ['read:user', 'user:email', 'repo', 'read:org'], // Request necessary scopes
+  scope: ['read:user', 'user:email'],
 }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
   try {
     console.log('GitHub OAuth callback received for user:', profile.username)
@@ -53,6 +53,9 @@ passport.use(new GitHubStrategy({
       githubCreatedAt = new Date(profile._json.created_at)
     }
 
+    // Extract OAuth scopes (for analytics and future features)
+    const githubScopes = profile._json?.scope || profile.scope || 'read:user user:email'
+
     // Encrypt the access token before storing
     const encryptedToken = tokenEncryption.encryptToken(accessToken)
 
@@ -70,7 +73,8 @@ passport.use(new GitHubStrategy({
         name,
         bio,
         profileImageUrl,
-        githubToken: encryptedToken, // Store encrypted token
+        githubToken: encryptedToken,
+        githubScopes,
         githubUrl,
         blogUrl,
         linkedinUrl: extractLinkedInUrl(blogUrl) || extractLinkedInUrl(bio),
@@ -91,7 +95,8 @@ passport.use(new GitHubStrategy({
         name,
         bio,
         profileImageUrl,
-        githubToken: encryptedToken, // Store encrypted token
+        githubToken: encryptedToken,
+        githubScopes,
         githubUrl,
         blogUrl,
         linkedinUrl: extractLinkedInUrl(blogUrl) || extractLinkedInUrl(bio),
@@ -108,9 +113,7 @@ passport.use(new GitHubStrategy({
   }
 }))
 
-/**
- * Extract LinkedIn URL from text
- */
+//Extract LinkedIn URL from text
 function extractLinkedInUrl(input?: string | null): string | undefined {
   if (!input) return undefined
 

@@ -7,6 +7,7 @@ interface LoginButtonProps {
   returnUrl?: string
   className?: string
   children?: React.ReactNode
+  // Note: includeRepoAccess removed - Enhanced Access coming soon
 }
 
 export function LoginButton({ returnUrl = '/', className, children }: LoginButtonProps) {
@@ -16,11 +17,13 @@ export function LoginButton({ returnUrl = '/', className, children }: LoginButto
     setIsLoading(true)
 
     try {
-      // Redirect to GitHub OAuth
+      // Using minimal scopes only (Enhanced Access coming soon)
+      const scopes = 'read:user user:email'
+
       const githubAuthUrl = new URL('https://github.com/login/oauth/authorize')
       githubAuthUrl.searchParams.set('client_id', process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID!)
       githubAuthUrl.searchParams.set('redirect_uri', `${window.location.origin}/api/auth/github/callback`)
-      githubAuthUrl.searchParams.set('scope', 'read:user user:email repo read:org')
+      githubAuthUrl.searchParams.set('scope', scopes)
       githubAuthUrl.searchParams.set('state', returnUrl)
 
       window.location.href = githubAuthUrl.toString()

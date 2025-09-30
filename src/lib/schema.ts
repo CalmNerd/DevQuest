@@ -25,6 +25,7 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   username: varchar("username").unique(),
   githubToken: text("github_token"),
+  githubScopes: varchar("github_scopes"),
   githubUrl: varchar("github_url"),
   blogUrl: varchar("blog_url"),
   linkedinUrl: varchar("linkedin_url"),
