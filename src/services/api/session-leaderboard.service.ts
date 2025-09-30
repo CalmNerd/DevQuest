@@ -1,5 +1,5 @@
 import { db } from "../database/db-http.service"
-import { leaderboards, users, leaderboardSessions } from "../../lib/schema"
+import { leaderboards, users, leaderboardSessions, githubStats } from "../../lib/schema"
 import { eq, and, sql, desc } from "drizzle-orm"
 
 
@@ -10,7 +10,8 @@ class SessionLeaderboardService {
     async getSessionLeaderboard(
         sessionType: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'overall',
         limit: number = 50,
-        offset: number = 0
+        offset: number = 0,
+        leaderboardType: 'points' | 'commits' | 'stars' | 'streak' | 'repos' | 'followers' = 'points'
     ): Promise<any[]> {
         try {
             // Get the active session for this type
@@ -20,11 +21,41 @@ class SessionLeaderboardService {
             }
 
             // Get leaderboard entries for this session
+            // Order by the appropriate metric based on leaderboard type
+            let orderByClause: any[]
+            
+            switch (leaderboardType) {
+                case 'points':
+                    orderByClause = [desc(leaderboards.score), desc(leaderboards.commits)]
+                    break
+                case 'commits':
+                    orderByClause = [desc(leaderboards.commits), desc(leaderboards.score)]
+                    break
+                case 'stars':
+                    orderByClause = [desc(githubStats.totalStars), desc(leaderboards.score)]
+                    break
+                case 'streak':
+                    orderByClause = [desc(githubStats.longestStreak), desc(leaderboards.score)]
+                    break
+                case 'repos':
+                    orderByClause = [desc(githubStats.totalRepositories), desc(leaderboards.score)]
+                    break
+                case 'followers':
+                    orderByClause = [desc(githubStats.followers), desc(leaderboards.score)]
+                    break
+                default:
+                    orderByClause = [desc(leaderboards.score), desc(leaderboards.commits)]
+            }
+
             const result = await db
                 .select({
                     rank: leaderboards.rank,
                     commits: leaderboards.commits,
                     score: leaderboards.score,
+                    totalStars: githubStats.totalStars,
+                    longestStreak: githubStats.longestStreak,
+                    totalRepositories: githubStats.totalRepositories,
+                    followers: githubStats.followers,
                     userId: leaderboards.userId,
                     username: users.username,
                     name: users.name,
@@ -37,8 +68,9 @@ class SessionLeaderboardService {
                 })
                 .from(leaderboards)
                 .innerJoin(users, eq(leaderboards.userId, users.id))
+                .innerJoin(githubStats, eq(leaderboards.userId, githubStats.userId))
                 .where(eq(leaderboards.sessionId, activeSession.id))
-                .orderBy(desc(leaderboards.commits), desc(leaderboards.score))
+                .orderBy(...orderByClause)
                 .limit(limit)
                 .offset(offset)
 
@@ -58,13 +90,13 @@ class SessionLeaderboardService {
 
     // Get all session leaderboards
 
-    async getAllSessionLeaderboards(limit: number = 10): Promise<Record<string, any[]>> {
+    async getAllSessionLeaderboards(limit: number = 10, leaderboardType: 'points' | 'commits' | 'stars' | 'streak' | 'repos' | 'followers' = 'points'): Promise<Record<string, any[]>> {
         const sessionTypes = ['daily', 'weekly', 'monthly', 'yearly', 'overall'] as const
         const leaderboards: Record<string, any[]> = {}
 
         for (const sessionType of sessionTypes) {
             try {
-                leaderboards[sessionType] = await this.getSessionLeaderboard(sessionType, limit)
+                leaderboards[sessionType] = await this.getSessionLeaderboard(sessionType, limit, 0, leaderboardType)
             } catch (error) {
                 console.error(`Error getting ${sessionType} leaderboard:`, error)
                 leaderboards[sessionType] = []
@@ -291,7 +323,8 @@ class SessionLeaderboardService {
     async getSessionLeaderboardPaginated(
         sessionType: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'overall',
         page: number = 1,
-        pageSize: number = 50
+        pageSize: number = 50,
+        leaderboardType: 'points' | 'commits' | 'stars' | 'streak' | 'repos' | 'followers' = 'points'
     ): Promise<{
         data: any[]
         pagination: {
@@ -305,7 +338,7 @@ class SessionLeaderboardService {
     }> {
         try {
             const offset = (page - 1) * pageSize
-            const data = await this.getSessionLeaderboard(sessionType, pageSize, offset)
+            const data = await this.getSessionLeaderboard(sessionType, pageSize, offset, leaderboardType)
 
             // Get total count
             const activeSession = await this.getActiveSession(sessionType)

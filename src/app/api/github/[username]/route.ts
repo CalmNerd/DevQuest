@@ -53,44 +53,107 @@ export async function GET(request: NextRequest, { params }: { params: { username
       const fetchTime = Date.now() - startTime
       console.log(`[${requestId}] Successfully fetched user stats for ${username} (full fetch) in ${fetchTime}ms`)
     } catch (error) {
-      console.error(` Failed to fetch user stats, using fallback:`, error)
+      console.error(` Failed to fetch user stats:`, error)
       hasErrors = true
 
-      statsData = {
-        dailyContributions: 0,
-        weeklyContributions: 0,
-        monthlyContributions: 0,
-        yearlyContributions: 0,
-        last365Contributions: 0,
-        thisYearContributions: 0,
-        overallContributions: 0,
-        points: (githubData.public_repos || 0) * 3 + (githubData.followers || 0),
-        totalStars: 0,
-        totalForks: 0,
-        contributedTo: 0,
-        totalRepositories: githubData.public_repos || 0,
-        followers: githubData.followers || 0,
-        following: githubData.following || 0,
-        currentStreak: 0,
-        longestStreak: 0,
-        topLanguage: null,
-        languageStats: {},
-        contributionGraph: { weeks: [], totalContributions: 0 },
-        totalCommits: 0,
-        meaningfulCommits: 0,
-        totalPullRequests: 0,
-        mergedPullRequests: 0,
-        totalIssues: 0,
-        closedIssues: 0,
-        totalReviews: 0,
-        externalContributors: 0,
-        reposWithStars: 0,
-        reposWithForks: 0,
-        dependencyUsage: 0,
-        languageCount: 0,
-        topLanguagePercentage: 0,
-        rareLanguageRepos: 0,
-        lastFetchedAt: new Date(),
+      // CRITICAL FIX: Don't create fallback data that overwrites existing stats
+      // Instead, get existing stats from database to preserve data integrity
+      const existingUser = await storage.getUserByUsername(username)
+      if (existingUser) {
+        const existingStats = await storage.getGithubStats(existingUser.id)
+        if (existingStats) {
+          console.log(`Using existing stats to preserve data integrity for ${username}`)
+          // Return existing stats with updated timestamp only
+          statsData = {
+            ...existingStats,
+            lastFetchedAt: new Date(),
+            // Mark as failed fetch for monitoring
+            fetchFailed: true,
+            fetchError: error instanceof Error ? error.message : 'Unknown error'
+          }
+        } else {
+          // No existing stats, create minimal fallback
+          console.log(`No existing stats found, creating minimal fallback for ${username}`)
+          statsData = {
+            dailyContributions: 0,
+            weeklyContributions: 0,
+            monthlyContributions: 0,
+            yearlyContributions: 0,
+            last365Contributions: 0,
+            thisYearContributions: 0,
+            overallContributions: 0,
+            points: (githubData.public_repos || 0) * 3 + (githubData.followers || 0),
+            totalStars: 0,
+            totalForks: 0,
+            contributedTo: 0,
+            totalRepositories: githubData.public_repos || 0,
+            followers: githubData.followers || 0,
+            following: githubData.following || 0,
+            currentStreak: 0,
+            longestStreak: 0,
+            topLanguage: null,
+            languageStats: {},
+            contributionGraph: { weeks: [], totalContributions: 0 },
+            totalCommits: 0,
+            meaningfulCommits: 0,
+            totalPullRequests: 0,
+            mergedPullRequests: 0,
+            totalIssues: 0,
+            closedIssues: 0,
+            totalReviews: 0,
+            externalContributors: 0,
+            reposWithStars: 0,
+            reposWithForks: 0,
+            dependencyUsage: 0,
+            languageCount: 0,
+            topLanguagePercentage: 0,
+            rareLanguageRepos: 0,
+            lastFetchedAt: new Date(),
+            fetchFailed: true,
+            fetchError: error instanceof Error ? error.message : 'Unknown error'
+          }
+        }
+      } else {
+        // User doesn't exist, create minimal fallback
+        console.log(`User not found, creating minimal fallback for ${username}`)
+        statsData = {
+          dailyContributions: 0,
+          weeklyContributions: 0,
+          monthlyContributions: 0,
+          yearlyContributions: 0,
+          last365Contributions: 0,
+          thisYearContributions: 0,
+          overallContributions: 0,
+          points: (githubData.public_repos || 0) * 3 + (githubData.followers || 0),
+          totalStars: 0,
+          totalForks: 0,
+          contributedTo: 0,
+          totalRepositories: githubData.public_repos || 0,
+          followers: githubData.followers || 0,
+          following: githubData.following || 0,
+          currentStreak: 0,
+          longestStreak: 0,
+          topLanguage: null,
+          languageStats: {},
+          contributionGraph: { weeks: [], totalContributions: 0 },
+          totalCommits: 0,
+          meaningfulCommits: 0,
+          totalPullRequests: 0,
+          mergedPullRequests: 0,
+          totalIssues: 0,
+          closedIssues: 0,
+          totalReviews: 0,
+          externalContributors: 0,
+          reposWithStars: 0,
+          reposWithForks: 0,
+          dependencyUsage: 0,
+          languageCount: 0,
+          topLanguagePercentage: 0,
+          rareLanguageRepos: 0,
+          lastFetchedAt: new Date(),
+          fetchFailed: true,
+          fetchError: error instanceof Error ? error.message : 'Unknown error'
+        }
       }
     }
 
@@ -100,10 +163,10 @@ export async function GET(request: NextRequest, { params }: { params: { username
       console.log(` Successfully fetched ${repos.length} repositories for ${username}`)
 
       if (hasErrors && repos.length > 0) {
-        statsData.totalStars = repos.reduce((sum: number, repo: any) => sum + (repo.stargazers_count || 0), 0)
-        statsData.totalForks = repos.reduce((sum: number, repo: any) => sum + (repo.forks_count || 0), 0)
-        statsData.reposWithStars = repos.filter((repo: any) => repo.stargazers_count > 0).length
-        statsData.reposWithForks = repos.filter((repo: any) => repo.forks_count > 0).length
+        const totalStars = repos.reduce((sum: number, repo: any) => sum + (repo.stargazers_count || 0), 0)
+        const totalForks = repos.reduce((sum: number, repo: any) => sum + (repo.forks_count || 0), 0)
+        const reposWithStars = repos.filter((repo: any) => repo.stargazers_count > 0).length
+        const reposWithForks = repos.filter((repo: any) => repo.forks_count > 0).length
 
         // Calculate language stats from repositories
         const languageStats: Record<string, number> = {}
@@ -112,19 +175,26 @@ export async function GET(request: NextRequest, { params }: { params: { username
             languageStats[repo.language] = (languageStats[repo.language] || 0) + 1
           }
         })
-        statsData.languageStats = languageStats
-        statsData.languageCount = Object.keys(languageStats).length
+        const languageCount = Object.keys(languageStats).length
 
         const topLanguage =
           Object.entries(languageStats).sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0] || null
-        statsData.topLanguage = topLanguage
 
-        if (topLanguage) {
-          statsData.topLanguagePercentage = Math.round((languageStats[topLanguage] / repos.length) * 100)
-        }
+        const topLanguagePercentage = topLanguage ? Math.round((languageStats[topLanguage] / repos.length) * 100) : 0
 
         // Recalculate points with repository data
-        statsData.points = statsData.totalStars * 2 + repos.length * 3 + (githubData.followers || 0)
+        const points = totalStars * 2 + repos.length * 3 + (githubData.followers || 0)
+
+        // Update statsData with calculated values
+        statsData.totalStars = totalStars
+        statsData.totalForks = totalForks
+        statsData.reposWithStars = reposWithStars
+        statsData.reposWithForks = reposWithForks
+        statsData.languageStats = languageStats
+        statsData.languageCount = languageCount
+        statsData.topLanguage = topLanguage
+        statsData.topLanguagePercentage = topLanguagePercentage
+        statsData.points = points
       }
     } catch (error) {
       console.error(` Failed to fetch repositories:`, error)

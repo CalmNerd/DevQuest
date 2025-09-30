@@ -155,7 +155,68 @@ class BackgroundUpdateService {
 
       // Fetch latest GitHub data with full fetch only
       const githubData = await githubService.fetchUserData(user.username)
-      const statsData = await githubService.fetchUserStats(user.username)
+      let statsData: any
+      let fetchSucceeded = true
+
+      try {
+        statsData = await githubService.fetchUserStats(user.username)
+      } catch (error) {
+        console.error(`Failed to fetch stats for ${user.username}, preserving existing data:`, error)
+        fetchSucceeded = false
+        
+        // CRITICAL FIX: Get existing stats to preserve data integrity
+        const existingStats = await storage.getGithubStats(user.id)
+        if (existingStats) {
+          console.log(`Using existing stats to preserve data integrity for ${user.username}`)
+          statsData = {
+            ...existingStats,
+            lastFetchedAt: new Date(),
+            fetchFailed: true,
+            fetchError: error instanceof Error ? error.message : 'Unknown error'
+          }
+        } else {
+          // No existing stats, create minimal fallback
+          console.log(`No existing stats found, creating minimal fallback for ${user.username}`)
+          statsData = {
+            dailyContributions: 0,
+            weeklyContributions: 0,
+            monthlyContributions: 0,
+            yearlyContributions: 0,
+            last365Contributions: 0,
+            thisYearContributions: 0,
+            overallContributions: 0,
+            points: (githubData.public_repos || 0) * 3 + (githubData.followers || 0),
+            totalStars: 0,
+            totalForks: 0,
+            contributedTo: 0,
+            totalRepositories: githubData.public_repos || 0,
+            followers: githubData.followers || 0,
+            following: githubData.following || 0,
+            currentStreak: 0,
+            longestStreak: 0,
+            topLanguage: null,
+            languageStats: {},
+            contributionGraph: { weeks: [], totalContributions: 0 },
+            totalCommits: 0,
+            meaningfulCommits: 0,
+            totalPullRequests: 0,
+            mergedPullRequests: 0,
+            totalIssues: 0,
+            closedIssues: 0,
+            totalReviews: 0,
+            externalContributors: 0,
+            reposWithStars: 0,
+            reposWithForks: 0,
+            dependencyUsage: 0,
+            languageCount: 0,
+            topLanguagePercentage: 0,
+            rareLanguageRepos: 0,
+            lastFetchedAt: new Date(),
+            fetchFailed: true,
+            fetchError: error instanceof Error ? error.message : 'Unknown error'
+          }
+        }
+      }
 
       // Update user profile if needed
       await storage.upsertUser({
@@ -174,7 +235,7 @@ class BackgroundUpdateService {
         githubCreatedAt: githubData.created_at ? new Date(githubData.created_at) : undefined,
       })
 
-      // Update GitHub stats with full fetch data
+      // Update GitHub stats with data (preserved existing data if fetch failed)
       await storage.upsertGithubStats({
         userId: user.id,
         ...statsData,
@@ -187,11 +248,10 @@ class BackgroundUpdateService {
       // Update leaderboards for all active sessions
       await this.updateUserLeaderboards(user.id, statsData)
 
-      // const fetchType = (statsData as any).isIncrementalFetch ? 'incremental' : 'full'
-      // const eventsCount = (statsData as any).recentEventsCount || 0
-      // console.log(`Successfully updated user: ${user.username} (${fetchType} fetch, ${eventsCount} recent events)`)
-
-      console.log(`Successfully updated user: ${user.username} (full fetch)`)
+      // Log the result with fetch status
+      const fetchType = fetchSucceeded ? 'full fetch' : 'preserved existing data (fetch failed)'
+      const fetchStatus = (statsData as any).fetchFailed ? 'FAILED' : 'SUCCESS'
+      console.log(`Successfully updated user: ${user.username} (${fetchType} - ${fetchStatus})`)
       return "success"
     } catch (error) {
       console.error(`Error updating user ${user.username}:`, error)

@@ -275,99 +275,24 @@ class GitHubService {
     }
   }
 
-  private async fetchUserStatsWithREST(username: string) {
-    try {
-      console.log(`[v0] Falling back to REST API for user: ${username}`)
-
-      // Fetch basic user data
-      const userData = await this.fetchUserData(username)
-
-      // Fetch repositories
-      const repos = await this.fetchUserRepositories(username, 1, 100)
-
-      // Calculate basic stats from REST API data
-      let totalStars = 0
-      let totalForks = 0
-      const languageStats: Record<string, number> = {}
-
-      repos.forEach((repo: any) => {
-        totalStars += repo.stargazers_count || 0
-        totalForks += repo.forks_count || 0
-        if (repo.language) {
-          languageStats[repo.language] = (languageStats[repo.language] || 0) + 1
-        }
-      })
-
-      const topLanguage =
-        Object.entries(languageStats).sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0] || null
-
-      // Return simplified stats when GraphQL is unavailable
-      return {
-        dailyContributions: 0,
-        weeklyContributions: 0,
-        monthlyContributions: 0,
-        yearlyContributions: 0,
-        last365Contributions: 0,
-        thisYearContributions: 0,
-        overallContributions: 0,
-        points: totalStars * 2 + repos.length * 3,
-        totalStars,
-        totalForks,
-        contributedTo: repos.filter((r: any) => r.fork).length,
-        totalRepositories: repos.length,
-        followers: userData.followers || 0,
-        following: userData.following || 0,
-        currentStreak: 0,
-        longestStreak: 0,
-        topLanguage,
-        languageStats,
-        contributionGraph: { weeks: [], totalContributions: 0 },
-        totalCommits: 0,
-        meaningfulCommits: 0,
-        totalPullRequests: 0,
-        mergedPullRequests: 0,
-        totalIssues: 0,
-        closedIssues: 0,
-        totalReviews: 0,
-        externalContributors: 0,
-        reposWithStars: repos.filter((r: any) => r.stargazers_count > 0).length,
-        reposWithForks: repos.filter((r: any) => r.forks_count > 0).length,
-        dependencyUsage: 0,
-        languageCount: Object.keys(languageStats).length,
-        topLanguagePercentage: topLanguage ? Math.round((languageStats[topLanguage] / repos.length) * 100) : 0,
-        rareLanguageRepos: 0,
-        lastFetchedAt: new Date(),
-      }
-    } catch (error) {
-      console.error("REST API fallback failed:", error)
-      throw error
-    }
-  }
+  // REMOVED: fetchUserStatsWithREST method
+  // REST API fallback was removed to prevent data corruption
+  // GraphQL provides more accurate and comprehensive data
+  // When GraphQL fails, existing data should be preserved instead of using inaccurate REST data
 
   async fetchUserStats(username: string) {
-    try {
-      // Try GraphQL first
-      return await this.fetchUserStatsWithGraphQL(username)
-    } catch (error) {
-      console.warn("GraphQL failed, trying REST API fallback:", error)
-      // Fall back to REST API if GraphQL fails
-      return await this.fetchUserStatsWithREST(username)
-    }
+    // Use GraphQL only - no REST fallback to prevent data corruption
+    return await this.fetchUserStatsWithGraphQL(username)
   }
   
   async fetchUserStatsIncremental(username: string, lastFetchTime?: Date, isIncremental: boolean = false) {
-    try {
-      if (isIncremental && lastFetchTime) {
-        console.log(`Performing incremental fetch for ${username} since ${lastFetchTime.toISOString()}`)
-        return await this.fetchUserStatsIncrementalWithGraphQL(username, lastFetchTime)
-      } else {
-        console.log(`Performing full fetch for ${username}`)
-        return await this.fetchUserStatsWithGraphQL(username)
-      }
-    } catch (error) {
-      console.warn("GraphQL failed, trying REST API fallback:", error)
-      // Fall back to REST API if GraphQL fails
-      return await this.fetchUserStatsWithREST(username)
+    // Use GraphQL only - no REST fallback to prevent data corruption
+    if (isIncremental && lastFetchTime) {
+      console.log(`Performing incremental fetch for ${username} since ${lastFetchTime.toISOString()}`)
+      return await this.fetchUserStatsIncrementalWithGraphQL(username, lastFetchTime)
+    } else {
+      console.log(`Performing full fetch for ${username}`)
+      return await this.fetchUserStatsWithGraphQL(username)
     }
   }
 

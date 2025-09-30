@@ -19,48 +19,21 @@ export async function GET(request: NextRequest) {
     let leaderboardData: any[] = []
     let totalCount: number = 0
 
-    // For commits and points, use session data
-    if (type === 'commits' || type === 'points') {
-      leaderboardData = await sessionLeaderboardService.getSessionLeaderboard(sessionType as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'overall', limit, offset)
-      const sessionStats = await sessionLeaderboardService.getSessionStats(sessionType as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'overall')
-      totalCount = sessionStats.totalParticipants
-    } else {
-      // For other types (stars, streak, repos, followers), use user data with session filtering
-      switch (type) {
-        case "stars":
-          leaderboardData = await drizzleDb.getTopUsersByStars(limit, offset)
-          totalCount = await drizzleDb.getTotalUsersCount()
-          break
-        case "streak":
-          leaderboardData = await drizzleDb.getTopUsersByStreak(limit, offset)
-          totalCount = await drizzleDb.getTotalUsersCount()
-          break
-        case "repos":
-          leaderboardData = await drizzleDb.getTopUsersByRepositories(limit, offset)
-          totalCount = await drizzleDb.getTotalUsersCount()
-          break
-        case "followers":
-          leaderboardData = await drizzleDb.getTopUsersByFollowers(limit, offset)
-          totalCount = await drizzleDb.getTotalUsersCount()
-          break
-        default:
-          leaderboardData = await drizzleDb.getTopUsersByPoints(limit, offset)
-          totalCount = await drizzleDb.getTotalUsersCount()
-      }
-    }
+    // Use session data for all leaderboard types
+    leaderboardData = await sessionLeaderboardService.getSessionLeaderboard(
+      sessionType as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'overall', 
+      limit, 
+      offset, 
+      type as 'points' | 'commits' | 'stars' | 'streak' | 'repos' | 'followers'
+    )
+    const sessionStats = await sessionLeaderboardService.getSessionStats(sessionType as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'overall')
+    totalCount = sessionStats.totalParticipants
 
     // Get session information for display
-    let sessionInfo = null
-    if (type === 'commits' || type === 'points') {
-      const sessionStats = await sessionLeaderboardService.getSessionStats(sessionType as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'overall')
-      sessionInfo = sessionStats.sessionInfo
-    }
+    const sessionInfo = sessionStats.sessionInfo
 
     // Transform data to match expected format
     const entries = leaderboardData.map((entry, index) => {
-      // Handle different data sources
-      const isSessionData = type === 'commits' || type === 'points'
-
       return {
         rank: entry.rank || (offset + index + 1),
         username: entry.username,
@@ -74,16 +47,16 @@ export async function GET(request: NextRequest) {
         location: entry.location,
         followers: entry.followers || 0,
         following: entry.following || 0,
-        publicRepos: entry.publicRepos || 0,
+        publicRepos: entry.publicRepos || entry.totalRepositories || 0,
         createdAt: entry.createdAt,
         updatedAt: entry.updatedAt,
-        // Session-specific data (only for session-based leaderboards)
-        commits: isSessionData ? (entry.commits || 0) : 0,
-        sessionType: isSessionData ? sessionType : 'global',
+        // Session-specific data (all leaderboards now use session data)
+        commits: entry.commits || 0,
+        sessionType: sessionType,
         // Session information for UI display
-        sessionKey: isSessionData ? entry.sessionKey : null,
-        sessionStartDate: isSessionData ? entry.sessionStartDate : null,
-        sessionEndDate: isSessionData ? entry.sessionEndDate : null,
+        sessionKey: entry.sessionKey,
+        sessionStartDate: entry.sessionStartDate,
+        sessionEndDate: entry.sessionEndDate,
       }
     })
 
