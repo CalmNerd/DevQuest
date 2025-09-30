@@ -529,7 +529,7 @@ export default function BackgroundServiceAdmin() {
           <Card>
             <CardHeader>
               <CardTitle>Database Operations</CardTitle>
-              <CardDescription>Test and manage database operations</CardDescription>
+              <CardDescription>Test database operations and manage schema</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4">

@@ -371,7 +371,8 @@ class BackgroundUpdateService {
       const { leaderboardSessions } = await import("../../lib/schema")
       const { eq, and } = await import("drizzle-orm")
 
-      const result = await db
+      // Get all active sessions for this type to check for duplicates
+      const activeSessions = await db
         .select()
         .from(leaderboardSessions)
         .where(
@@ -380,9 +381,43 @@ class BackgroundUpdateService {
             eq(leaderboardSessions.isActive, true)
           )
         )
-        .limit(1)
 
-      return result.length > 0 ? result[0] : null
+      if (activeSessions.length === 0) {
+        console.log(`No active ${sessionType} session found`)
+        return null
+      }
+
+      // If multiple active sessions exist (shouldn't happen but can due to race conditions)
+      if (activeSessions.length > 1) {
+        console.warn(`WARNING: Found ${activeSessions.length} active ${sessionType} sessions! Cleaning up duplicates...`)
+        
+        // Get the expected session key for current period
+        const expectedSessionKey = timezoneService.getSessionKey(sessionType as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'overall')
+        
+        // Find the session with the correct session key
+        const correctSession = activeSessions.find(s => s.sessionKey === expectedSessionKey)
+        
+        // If no session matches the expected key, keep the most recent one
+        const sessionToKeep = correctSession || activeSessions.sort((a, b) => {
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+          return dateB - dateA
+        })[0]
+        
+        // Deactivate all other sessions
+        const sessionsToDeactivate = activeSessions.filter(s => s.id !== sessionToKeep.id)
+        for (const session of sessionsToDeactivate) {
+          await db
+            .update(leaderboardSessions)
+            .set({ isActive: false, updatedAt: new Date() })
+            .where(eq(leaderboardSessions.id, session.id))
+          console.log(`Deactivated duplicate ${sessionType} session: ${session.sessionKey} (ID: ${session.id})`)
+        }
+        
+        return sessionToKeep
+      }
+
+      return activeSessions[0]
     } catch (error) {
       console.error(`Error getting active session for ${sessionType}:`, error)
       return null

@@ -249,7 +249,68 @@ export class DatabaseStorage implements IStorage {
   async updateLeaderboardEntry(entry: InsertLeaderboard): Promise<Leaderboard> {
     // Check if this is a session-based entry (has sessionId) or legacy entry
     if (entry.sessionId) {
-      // New session-based leaderboard entry
+      // SAFEGUARD 1: Check if entry already exists in THIS session
+      const existingEntries = await db
+        .select()
+        .from(leaderboards)
+        .where(
+          and(
+            eq(leaderboards.userId, entry.userId),
+            eq(leaderboards.sessionId, entry.sessionId)
+          )
+        )
+
+      // If multiple entries exist in same session (should never happen due to unique constraint)
+      if (existingEntries.length > 1) {
+        console.error(`CRITICAL: Found ${existingEntries.length} duplicate leaderboard entries for user ${entry.userId} in session ${entry.sessionId}!`)
+        console.error('Duplicate entry IDs:', existingEntries.map(e => e.id).join(', '))
+        
+        // Keep the most recent entry and delete others
+        const entryToKeep = existingEntries.sort((a, b) => {
+          const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
+          const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
+          return dateB - dateA
+        })[0]
+        
+        const entriesToDelete = existingEntries.filter(e => e.id !== entryToKeep.id)
+        for (const dupEntry of entriesToDelete) {
+          await db.delete(leaderboards).where(eq(leaderboards.id, dupEntry.id))
+          console.log(`Deleted duplicate leaderboard entry ID: ${dupEntry.id}`)
+        }
+      }
+
+      // SAFEGUARD 2: Delete entries for this user and period from OTHER (inactive) sessions
+      // This prevents accumulation of entries across session changes
+      const { leaderboardSessions } = await import('./schema')
+      
+      // Find entries for the same user and period but in different sessions
+      const entriesFromOtherSessions = await db
+        .select({
+          leaderboardId: leaderboards.id,
+          sessionId: leaderboards.sessionId,
+          sessionKey: leaderboardSessions.sessionKey,
+          isActive: leaderboardSessions.isActive,
+        })
+        .from(leaderboards)
+        .innerJoin(leaderboardSessions, eq(leaderboards.sessionId, leaderboardSessions.id))
+        .where(
+          and(
+            eq(leaderboards.userId, entry.userId),
+            eq(leaderboards.period, entry.period),
+            sql`${leaderboards.sessionId} != ${entry.sessionId}` // Different session
+          )
+        )
+
+      if (entriesFromOtherSessions.length > 0) {
+        console.log(`Found ${entriesFromOtherSessions.length} old entries for user ${entry.userId} in period ${entry.period} from other sessions. Cleaning up...`)
+        
+        for (const oldEntry of entriesFromOtherSessions) {
+          await db.delete(leaderboards).where(eq(leaderboards.id, oldEntry.leaderboardId))
+          console.log(`Deleted old entry from session ${oldEntry.sessionKey} (ID: ${oldEntry.leaderboardId}, active: ${oldEntry.isActive})`)
+        }
+      }
+
+      // New session-based leaderboard entry with upsert
       const [result] = await db
         .insert(leaderboards)
         .values(entry)

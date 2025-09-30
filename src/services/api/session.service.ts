@@ -363,7 +363,6 @@ class SessionManagementService {
   }
 
   //  Create a new session when the current one expires
-    
   private async createNewSession(sessionType: SessionType): Promise<void> {
     const config = SESSION_CONFIGS[sessionType as keyof typeof SESSION_CONFIGS]
     
@@ -372,7 +371,18 @@ class SessionManagementService {
     const startDate = timezoneService.getSessionStartDate(sessionType)
     const endDate = timezoneService.getSessionEndDate(sessionType)
 
-    // Deactivate old session
+    // Get old active sessions before deactivating
+    const oldActiveSessions = await db
+      .select()
+      .from(leaderboardSessions)
+      .where(
+        and(
+          eq(leaderboardSessions.sessionType, sessionType),
+          eq(leaderboardSessions.isActive, true)
+        )
+      )
+
+    // Deactivate old sessions
     await db
       .update(leaderboardSessions)
       .set({
@@ -385,6 +395,18 @@ class SessionManagementService {
           eq(leaderboardSessions.isActive, true)
         )
       )
+
+    // Clean up old leaderboard entries from deactivated sessions
+    if (oldActiveSessions.length > 0) {
+      console.log(`Cleaning up entries from ${oldActiveSessions.length} old ${sessionType} sessions...`)
+      for (const oldSession of oldActiveSessions) {
+        const deletedCount = await db
+          .delete(leaderboards)
+          .where(eq(leaderboards.sessionId, oldSession.id))
+        
+        console.log(`Deleted entries from old ${sessionType} session ${oldSession.sessionKey} (session ID: ${oldSession.id})`)
+      }
+    }
 
     // Create new session
     const newSession: InsertLeaderboardSession = {
