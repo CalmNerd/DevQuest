@@ -36,9 +36,9 @@ export function LoginWithPermissions({ returnUrl = '/' }: LoginWithPermissionsPr
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 max-w-4xl mx-auto">
+    <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-4xl mx-auto">
       {/* Basic Access Card */}
-      <Card className="relative md:col-span-2">
+      <Card className="relative">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -50,7 +50,7 @@ export function LoginWithPermissions({ returnUrl = '/' }: LoginWithPermissionsPr
             Access your public GitHub data and compete on leaderboards
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="h-full flex flex-col justify-between gap-4">
           <div className="text-sm space-y-2">
             <p className="font-medium">What we access:</p>
             <ul className="space-y-1 text-muted-foreground">
@@ -106,7 +106,7 @@ export function LoginWithPermissions({ returnUrl = '/' }: LoginWithPermissionsPr
       </Card>
 
       {/* Enhanced Access Card - Coming Soon */}
-      <Card className="relative border-muted-foreground/20 opacity-75 md:col-span-2">
+      <Card className="relative border-muted-foreground/20 opacity-75">
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="bg-muted text-muted-foreground text-xs font-medium px-3 py-1 rounded-full">
             Coming Soon
@@ -123,7 +123,7 @@ export function LoginWithPermissions({ returnUrl = '/' }: LoginWithPermissionsPr
             Private repository tracking (in development)
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="h-full flex flex-col justify-between gap-4">
           <div className="text-sm space-y-2">
             <p className="font-medium text-muted-foreground">Upcoming features:</p>
             <ul className="space-y-1 text-muted-foreground">

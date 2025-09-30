@@ -3,20 +3,13 @@
 import { LoginWithPermissions } from '@/components/auth'
 import { useSearchParams } from 'next/navigation'
 
-/**
- * Onboarding page - Choose your access level before signing in
- * 
- * This page shows users two options:
- * 1. Basic Access - Minimal permissions (recommended)
- * 2. Enhanced Access - Includes private repository access (optional)
- */
 export default function OnboardingPage() {
   const searchParams = useSearchParams()
   const returnUrl = searchParams.get('returnUrl') || '/'
 
   return (
     <div className="container mx-auto px-4 py-16">
-      <div className="max-w-4xl mx-auto">
+      <div className="w-full">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">Welcome to DevQuest</h1>
