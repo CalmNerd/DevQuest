@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { RepositorySearchForm } from '@/components/repositories/RepositorySearchForm'
 import { RepositoryResults } from '@/components/repositories/RepositoryResults'
+import TrendingPreview from '@/components/repositories/TrendingPreview'
 import { useRepositories } from '@/hooks/client'
 import { useDebounce } from '@/hooks/client'
 import { RepositorySearchFilters } from '@/types/github.types'
@@ -138,6 +139,17 @@ export default function RepositoryHomePage() {
             </Card>
           </motion.div>
           </motion.div>
+
+          {/* Trending Preview - Only show when no search query */}
+          {!searchQuery && repositories.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <TrendingPreview />
+            </motion.div>
+          )}
           
           {/* Stats */}
           <motion.div

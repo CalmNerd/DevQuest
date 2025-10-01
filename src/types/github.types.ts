@@ -392,3 +392,50 @@ export interface GitHubStatsData {
   rareLanguageRepos: number
   lastFetchedAt: Date
 }
+
+/**
+ * Contributor information for a trending repository
+ */
+export interface TrendingContributor {
+  username: string
+  avatarUrl: string
+  profileUrl: string
+}
+
+//Scraped trending repository from GitHub trending page
+export interface ScrapedTrendingRepo {
+  title: string
+  url: string
+  description: string | null
+  language: string | null
+  stars: string
+  forks: string
+  todayStars: string
+  owner: string
+  name: string
+  builtBy: TrendingContributor[]
+}
+
+// Scraped trending developer from GitHub trending developers page
+export interface ScrapedTrendingDeveloper {
+  username: string
+  name: string
+  url: string
+  avatarUrl: string | null
+  repoName: string | null
+  repoUrl: string | null
+  repoDescription: string | null
+}
+
+// Options for scraping trending repositories
+export interface TrendingRepoOptions {
+  language?: string
+  since?: 'daily' | 'weekly' | 'monthly'
+  spokenLanguage?: string
+}
+
+// Options for scraping trending developers
+export interface TrendingDeveloperOptions {
+  language?: string
+  since?: 'daily' | 'weekly' | 'monthly'
+}
