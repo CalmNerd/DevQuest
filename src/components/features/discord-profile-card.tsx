@@ -16,6 +16,7 @@ import {
   Zap,
   MessageCircle,
   UserPlus,
+  GitCommit,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -36,23 +37,38 @@ interface DiscordProfileCardProps {
 export function DiscordProfileCard({ profile, isOpen, onClose, position }: DiscordProfileCardProps) {
   const [isFollowing, setIsFollowing] = useState(false)
 
-  const getStatusColor = () => {
-    // Simulate online status based on recent activity
-    const lastUpdate = new Date(profile.user.updated_at)
-    const daysSinceUpdate = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24)
+  // Generate last 7 days contribution data
+  const getLast7DaysContributions = () => {
+    if (!profile.contributionGraph || !profile.contributionGraph.weeks) {
+      return Array.from({ length: 7 }, (_, i) => ({
+        date: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        count: 0
+      }))
+    }
 
-    if (daysSinceUpdate < 1) return "bg-green-400"
-    if (daysSinceUpdate < 7) return "bg-yellow-400"
-    return "bg-gray-400"
-  }
+    const today = new Date()
+    const last7Days = []
 
-  const getStatusText = () => {
-    const lastUpdate = new Date(profile.user.updated_at)
-    const daysSinceUpdate = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24)
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000)
+      const dateStr = date.toISOString().split('T')[0]
 
-    if (daysSinceUpdate < 1) return "Active today"
-    if (daysSinceUpdate < 7) return "Active this week"
-    return "Away"
+      // Find contribution for this date in the graph
+      let count = 0
+      for (const week of profile.contributionGraph.weeks) {
+        for (const day of week.contributionDays) {
+          if (day.date === dateStr) {
+            count = day.contributionCount
+            break
+          }
+        }
+        if (count > 0) break
+      }
+
+      last7Days.push({ date: dateStr, count })
+    }
+
+    return last7Days
   }
 
   const topLanguages = Object.entries(profile.topLanguages)
@@ -85,7 +101,7 @@ export function DiscordProfileCard({ profile, isOpen, onClose, position }: Disco
               transform: position ? "none" : "translate(-50%, -50%)",
             }}
           >
-            <Card className="overflow-hidden border-2 border-primary/20 bg-card/95 backdrop-blur-md shadow-2xl shadow-primary/10">
+            <Card className="overflow-hidden border-2 border-primary/20 bg-card/95 backdrop-blur-md shadow-2xl shadow-primary/10 max-h-[80vh] overflow-y-auto">
               {/* Header with Banner */}
               <div className="relative h-20 bg-gradient-to-br from-primary/20 via-accent/10 to-secondary/20">
                 <Button
@@ -99,16 +115,13 @@ export function DiscordProfileCard({ profile, isOpen, onClose, position }: Disco
               </div>
 
               <CardContent className="relative p-6 pt-0">
-                {/* Avatar with Status */}
+                {/* Avatar */}
                 <div className="relative -mt-10 mb-4">
                   <div className="relative inline-block">
                     <Avatar className="h-20 w-20 border-4 border-card ring-2 ring-primary/20">
                       <AvatarImage src={profile.user.avatar_url || "/placeholder.svg"} alt={profile.user.login} />
                       <AvatarFallback className="text-xl">{profile.user.login[0].toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <div
-                      className={`absolute -bottom-1 -right-1 h-6 w-6 rounded-full border-4 border-card ${getStatusColor()}`}
-                    />
                   </div>
                 </div>
 
@@ -120,37 +133,111 @@ export function DiscordProfileCard({ profile, isOpen, onClose, position }: Disco
                   </div>
 
                   {profile.user.bio && <p className="text-sm text-muted-foreground line-clamp-2">{profile.user.bio}</p>}
-
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <div className={`h-2 w-2 rounded-full ${getStatusColor()}`} />
-                    <span>{getStatusText()}</span>
-                  </div>
                 </div>
 
-                {/* Achievements */}
-                {profile.achievementProgress && profile.achievementProgress.length > 0 && (
-                  <div className="mb-4">
-                    <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Top Achievements
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {profile.achievementProgress
-                        .filter((achievement: AchievementProgress) => achievement.isUnlocked)
-                        .sort((a: AchievementProgress, b: AchievementProgress) => (b.achievement.points || 0) - (a.achievement.points || 0))
-                        .slice(0, 6)
-                        .map((achievement: AchievementProgress) => (
-                          <Badge
-                            key={achievement.achievement.id}
-                            variant="secondary"
-                            className="text-xs"
-                            title={`${achievement.achievement.name} - ${achievement.achievement.description}`}
-                          >
-                            {achievement.achievement.name}
-                          </Badge>
-                        ))}
+                {/* Achievements Section */}
+                {((profile.achievementProgress && profile.achievementProgress.length > 0) ||
+                  (profile.githubNativeAchievements && profile.githubNativeAchievements.length > 0) ||
+                  (profile.trendingDeveloperBadges && profile.trendingDeveloperBadges.length > 0)) && (
+                    <div className="mb-4 space-y-3">
+                      {/* Custom Achievements */}
+                      {profile.achievementProgress && profile.achievementProgress.length > 0 && (
+                        <div>
+                          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Custom Achievements
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {profile.achievementProgress
+                              .filter((achievement: AchievementProgress) => achievement.isUnlocked)
+                              .sort((a: AchievementProgress, b: AchievementProgress) => (b.achievement.points || 0) - (a.achievement.points || 0))
+                              .slice(0, 3)
+                              .map((achievement: AchievementProgress) => (
+                                <Badge
+                                  key={achievement.achievement.id}
+                                  variant="secondary"
+                                  className="text-xs"
+                                  title={`${achievement.achievement.name} - ${achievement.achievement.description}`}
+                                >
+                                  {achievement.achievement.name}
+                                </Badge>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* GitHub Native Achievements */}
+                      {profile.githubNativeAchievements && profile.githubNativeAchievements.length > 0 && (
+                        <div>
+                          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            GitHub Achievements
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {profile.githubNativeAchievements.slice(0, 4).map((achievement: any, index: number) => (
+                              <div
+                                key={`${achievement.slug}-${index}`}
+                                className="relative group"
+                                title={`${achievement.name}${achievement.tier ? ` (${achievement.tier})` : ''}${achievement.description ? ` - ${achievement.description}` : ''}`}
+                              >
+                                <img
+                                  src={achievement.image}
+                                  alt={achievement.name}
+                                  className="h-6 w-6 rounded-full border border-border/50 hover:border-primary/50 transition-colors"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                  }}
+                                />
+                                {achievement.tier && (
+                                  <div className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-yellow-400 text-[6px] flex items-center justify-center font-bold text-black">
+                                    {achievement.tier}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Trending Developer Badges */}
+                      {profile.trendingDeveloperBadges && profile.trendingDeveloperBadges.length > 0 && (
+                        <div>
+                          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Trending Status
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {profile.trendingDeveloperBadges
+                              .filter((badge: any) => badge.isCurrent)
+                              .slice(0, 2)
+                              .map((badge: any, index: number) => (
+                                <Badge
+                                  key={`trending-${badge.timePeriod}-${index}`}
+                                  variant="default"
+                                  className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-0"
+                                  title={`Currently trending in ${badge.timePeriod} leaderboard${badge.language ? ` (${badge.language})` : ''} - Rank #${badge.currentRank || 'N/A'}`}
+                                >
+                                  🔥 {badge.timePeriod.charAt(0).toUpperCase() + badge.timePeriod.slice(1)}
+                                  {badge.currentRank && ` #${badge.currentRank}`}
+                                </Badge>
+                              ))}
+                            {profile.trendingDeveloperBadges
+                              .filter((badge: any) => !badge.isCurrent)
+                              .slice(0, 1)
+                              .map((badge: any, index: number) => (
+                                <Badge
+                                  key={`past-trending-${badge.timePeriod}-${index}`}
+                                  variant="outline"
+                                  className="text-xs"
+                                  title={`Previously trended in ${badge.timePeriod} leaderboard${badge.language ? ` (${badge.language})` : ''} - Best rank #${badge.bestRank || 'N/A'}`}
+                                >
+                                  ⭐ {badge.timePeriod.charAt(0).toUpperCase() + badge.timePeriod.slice(1)}
+                                  {badge.bestRank && ` #${badge.bestRank}`}
+                                </Badge>
+                              ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
+                  )}
 
                 <Separator className="my-4" />
 
@@ -159,30 +246,58 @@ export function DiscordProfileCard({ profile, isOpen, onClose, position }: Disco
                   <div className="rounded-lg bg-muted/50 p-3 text-center">
                     <div className="flex items-center justify-center gap-1 text-primary">
                       <Star className="h-4 w-4" />
-                      <span className="font-bold">{profile.totalStars.toLocaleString()}</span>
+                      <span className="font-bold">{(profile.totalStars || 0).toLocaleString()}</span>
                     </div>
                     <p className="text-xs text-muted-foreground">Stars</p>
                   </div>
                   <div className="rounded-lg bg-muted/50 p-3 text-center">
                     <div className="flex items-center justify-center gap-1 text-accent">
                       <Users className="h-4 w-4" />
-                      <span className="font-bold">{profile.user.followers.toLocaleString()}</span>
+                      <span className="font-bold">{(profile.user.followers || 0).toLocaleString()}</span>
                     </div>
                     <p className="text-xs text-muted-foreground">Followers</p>
                   </div>
                   <div className="rounded-lg bg-muted/50 p-3 text-center">
                     <div className="flex items-center justify-center gap-1 text-secondary">
                       <BookOpen className="h-4 w-4" />
-                      <span className="font-bold">{profile.user.public_repos}</span>
+                      <span className="font-bold">{profile.user.public_repos || 0}</span>
                     </div>
                     <p className="text-xs text-muted-foreground">Repos</p>
                   </div>
                   <div className="rounded-lg bg-muted/50 p-3 text-center">
                     <div className="flex items-center justify-center gap-1 text-chart-1">
-                      <Zap className="h-4 w-4" />
-                      <span className="font-bold">{profile.contributionStreak}</span>
+                      <GitCommit className="h-4 w-4" />
+                      <span className="font-bold">{(profile.totalContributions || 0).toLocaleString()}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">Streak</p>
+                    <p className="text-xs text-muted-foreground">Contributions</p>
+                  </div>
+                </div>
+
+                {/* Last 7 Days Contribution Graph */}
+                <div className="mb-4">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Last 7 Days
+                  </p>
+                  <div className="flex gap-1 justify-center">
+                    {getLast7DaysContributions().map((day, index) => {
+                      const maxContributions = Math.max(...getLast7DaysContributions().map(d => d.count), 1)
+                      const intensity = day.count === 0 ? 0 : Math.min(4, Math.ceil((day.count / maxContributions) * 4))
+                      const bgColor = intensity === 0 ? 'bg-gray-100 dark:bg-gray-800' :
+                        intensity === 1 ? 'bg-green-200 dark:bg-green-900' :
+                          intensity === 2 ? 'bg-green-300 dark:bg-green-700' :
+                            intensity === 3 ? 'bg-green-400 dark:bg-green-600' : 'bg-green-500 dark:bg-green-500'
+
+                      return (
+                        <div
+                          key={day.date}
+                          className={`w-3 h-3 rounded-sm ${bgColor} border border-border/20`}
+                          title={`${day.date}: ${day.count} contributions`}
+                        />
+                      )
+                    })}
+                  </div>
+                  <div className="mt-1 text-center text-xs text-muted-foreground">
+                    {getLast7DaysContributions().reduce((sum, day) => sum + day.count, 0)} contributions this week
                   </div>
                 </div>
 
@@ -212,7 +327,7 @@ export function DiscordProfileCard({ profile, isOpen, onClose, position }: Disco
                   )}
                   <div className="flex items-center gap-2">
                     <Calendar className="h-3 w-3" />
-                    <span>Joined {formatProfileDate(profile.user.created_at)}</span>
+                    <span>Joined {formatProfileDate(profile.user.created_at || profile.user.updated_at)}</span>
                   </div>
                 </div>
 
@@ -281,11 +396,14 @@ export function ProfileCardTrigger({ username, children, profile, className }: P
     if (!profileData) {
       setLoading(true)
       try {
-        const response = await fetch(`/api/github/${username}`)
+        // Fetch from database instead of GitHub API
+        const response = await fetch(`/api/user-profile/${username}`)
         if (response.ok) {
           const data = await response.json()
-          console.log("data.................", data)
-          setProfileData(data)
+          console.log("Database profile data:", data)
+          setProfileData(data.data || data) // Handle both ApiResponse and direct response
+        } else {
+          console.error("Failed to fetch profile from database:", response.statusText)
         }
       } catch (error) {
         console.error("Failed to fetch profile:", error)

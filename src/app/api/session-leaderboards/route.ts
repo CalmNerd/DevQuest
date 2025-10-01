@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
       type,
       sessionType,
       period: sessionType,
+      lastUpdated: new Date().toISOString(),
     }
 
     return ApiResponse.success(responseData, {

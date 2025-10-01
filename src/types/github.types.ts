@@ -232,6 +232,19 @@ export interface UserProfile {
   totalContributions: number
   achievements: string[]
   achievementProgress?: any[]
+  githubNativeAchievements?: any[]
+  trendingDeveloperBadges?: any[]
+  contributionGraph?: {
+    weeks: Array<{
+      contributionDays: Array<{
+        date: string
+        contributionCount: number
+        level: number
+      }>
+    }>
+    totalContributions: number
+  }
+  lastUpdated?: string
 }
 
 
