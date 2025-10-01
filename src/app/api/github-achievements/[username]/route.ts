@@ -3,6 +3,7 @@ import { githubAchievementsScraperService } from "@/services/external"
 import { ApiResponse } from "@/lib/api-response"
 
 export async function GET(
+  _request: NextRequest,
   { params }: { params: { username: string } }
 ) {
   try {
@@ -101,7 +102,7 @@ export async function GET(
 //Clears the cache for a specific user's achievements
 //Useful for forcing a refresh of the scraped data
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { username: string } }
 ) {
   try {
@@ -136,7 +137,7 @@ export async function DELETE(
 //API Route: POST /api/github-achievements/[username]
 // Force refresh achievements for a user by clearing cache and fetching fresh data
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { username: string } }
 ) {
   try {
@@ -190,4 +191,3 @@ export async function POST(
     )
   }
 }
-
