@@ -75,9 +75,16 @@ export function DiscordProfileCard({ profile, isOpen, onClose, position }: Disco
     .sort(([, a], [, b]) => b - a)
     .slice(0, 3)
 
+  // Check if profile data is valid and complete
+  const isProfileValid = profile && 
+    profile.user && 
+    profile.user.login && 
+    profile.user.avatar_url !== null && 
+    profile.user.avatar_url !== undefined
+
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpen && isProfileValid && (
         <>
           {/* Backdrop */}
           <motion.div
@@ -401,7 +408,19 @@ export function ProfileCardTrigger({ username, children, profile, className }: P
         if (response.ok) {
           const data = await response.json()
           console.log("Database profile data:", data)
-          setProfileData(data.data || data) // Handle both ApiResponse and direct response
+          const profileResponse = data.data || data
+          
+          // Validate the profile data before setting it
+          if (profileResponse && 
+              profileResponse.user && 
+              profileResponse.user.login && 
+              profileResponse.user.avatar_url !== null && 
+              profileResponse.user.avatar_url !== undefined) {
+            setProfileData(profileResponse)
+            setIsOpen(true)
+          } else {
+            console.error("Invalid profile data received:", profileResponse)
+          }
         } else {
           console.error("Failed to fetch profile from database:", response.statusText)
         }
@@ -410,9 +429,17 @@ export function ProfileCardTrigger({ username, children, profile, className }: P
       } finally {
         setLoading(false)
       }
+    } else {
+      // Profile data already exists, validate it before opening
+      if (profileData.user && 
+          profileData.user.login && 
+          profileData.user.avatar_url !== null && 
+          profileData.user.avatar_url !== undefined) {
+        setIsOpen(true)
+      } else {
+        console.error("Existing profile data is invalid:", profileData)
+      }
     }
-
-    setIsOpen(true)
   }
 
   return (
@@ -421,7 +448,11 @@ export function ProfileCardTrigger({ username, children, profile, className }: P
         {children}
       </div>
 
-      {profileData && (
+      {profileData && 
+       profileData.user && 
+       profileData.user.login && 
+       profileData.user.avatar_url !== null && 
+       profileData.user.avatar_url !== undefined && (
         <DiscordProfileCard
           profile={profileData}
           isOpen={isOpen}
