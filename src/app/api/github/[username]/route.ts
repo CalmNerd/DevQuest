@@ -284,6 +284,9 @@ export async function GET(request: NextRequest, { params }: { params: { username
       }
     }
 
+    // FIRST to ensure achievements are available
+    await saveUserDataToDatabase(userId, username, githubData, statsData, repos, githubNativeAchievements, trendingDeveloperBadges)
+
     const profile = {
       // Basic GitHub data
       id: githubData.id,
@@ -366,11 +369,6 @@ export async function GET(request: NextRequest, { params }: { params: { username
     }
 
     console.log(` Successfully built profile for ${username} with ${hasErrors ? "fallback" : "full"} data`)
-
-    // Save data to database (async, don't wait for completion)
-    saveUserDataToDatabase(userId, username, githubData, statsData, repos, githubNativeAchievements, trendingDeveloperBadges).catch((error) => {
-      console.error(` Failed to save data for ${username}:`, error)
-    })
 
       return profile
     })()
