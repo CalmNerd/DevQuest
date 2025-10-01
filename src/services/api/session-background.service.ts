@@ -3,20 +3,40 @@ import { backgroundUpdateService } from './background.service'
 
 //  Session-aware background service that coordinates with session management
 //  and provides different update intervals for different session types
-
 class SessionBackgroundService {
   private isRunning = false
   private sessionService = sessionManagementService
   private backgroundService = backgroundUpdateService
+  private startPromise: Promise<void> | null = null // FIXED: Track ongoing start operation
 
   //  Start the session-aware background service
   async start(): Promise<void> {
+    // If already running, return immediately
     if (this.isRunning) {
-      console.log('Session background service is already running')
+      console.log('✓ Session background service is already running')
       return
     }
 
-    console.log('Starting session-aware background service...')
+    // If a start operation is in progress, wait for it to complete
+    if (this.startPromise) {
+      console.log('⏳ Session background service start already in progress, waiting...')
+      await this.startPromise
+      return
+    }
+
+    // Create a new start promise to track this operation
+    this.startPromise = this.doStart()
+    
+    try {
+      await this.startPromise
+    } finally {
+      this.startPromise = null
+    }
+  }
+
+  //  Internal start method - only called once
+  private async doStart(): Promise<void> {
+    console.log('🚀 Starting session-aware background service...')
     this.isRunning = true
 
     try {
@@ -26,9 +46,9 @@ class SessionBackgroundService {
       // Start the regular background service for user data updates
       this.backgroundService.start()
       
-      console.log('Session-aware background service started successfully')
+      console.log('✅ Session-aware background service started successfully')
     } catch (error) {
-      console.error('Error starting session background service:', error)
+      console.error('❌ Error starting session background service:', error)
       this.isRunning = false
       throw error
     }

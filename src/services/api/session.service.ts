@@ -42,24 +42,51 @@ class SessionManagementService {
   private isRunning = false
   private activeSessions: Map<string, LeaderboardSession> = new Map()
   private initializing = false // Prevent concurrent initialization
+  private startPromise: Promise<void> | null = null // Track ongoing start operation
 
   //  Start the session management service
   async start(): Promise<void> {
+    // If already running, return immediately
     if (this.isRunning) {
-      console.log('Session management service is already running')
+      console.log('✓ Session management service is already running')
       return
     }
 
-    console.log('Starting session management service...')
+    // If a start operation is in progress, wait for it to complete
+    if (this.startPromise) {
+      console.log('⏳ Session management service start already in progress, waiting...')
+      await this.startPromise
+      return
+    }
+
+    // Create a new start promise to track this operation
+    this.startPromise = this.doStart()
+    
+    try {
+      await this.startPromise
+    } finally {
+      this.startPromise = null
+    }
+  }
+
+  //  Internal start method - only called once
+  private async doStart(): Promise<void> {
+    console.log('🚀 Starting session management service...')
     this.isRunning = true
 
-    // Initialize or create active sessions
-    await this.initializeSessions()
-    
-    // Start cron jobs for each session type
-    await this.startCronJobs()
-    
-    console.log('Session management service started successfully')
+    try {
+      // Initialize or create active sessions
+      await this.initializeSessions()
+      
+      // Start cron jobs for each session type
+      await this.startCronJobs()
+      
+      console.log('✅ Session management service started successfully')
+    } catch (error) {
+      console.error('❌ Failed to start session management service:', error)
+      this.isRunning = false
+      throw error
+    }
   }
 
   //  Stop the session management service   
@@ -85,7 +112,6 @@ class SessionManagementService {
   }
 
   //  Initialize or create active sessions
-    
   private async initializeSessions(): Promise<void> {
     if (this.initializing) {
       console.log('Session initialization already in progress, skipping...')
@@ -134,39 +160,98 @@ class SessionManagementService {
       return
     }
 
-    // This prevents duplicate sessions from multiple initialization attempts
-    await db
-      .update(leaderboardSessions)
-      .set({
-        isActive: false,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(leaderboardSessions.sessionType, sessionType),
-          eq(leaderboardSessions.isActive, true)
+    // Wrap in try-catch to handle unique constraint violations
+    // This prevents crashes when concurrent processes try to create the same session
+    try {
+      // Get old active sessions before deactivating (for cleanup)
+      const oldActiveSessions = await db
+        .select()
+        .from(leaderboardSessions)
+        .where(
+          and(
+            eq(leaderboardSessions.sessionType, sessionType),
+            eq(leaderboardSessions.isActive, true)
+          )
         )
-      )
 
-    console.log(`Deactivated any existing ${sessionType} session before creating new one`)
+      // Deactivate old sessions for this type (defensive cleanup)
+      await db
+        .update(leaderboardSessions)
+        .set({
+          isActive: false,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(leaderboardSessions.sessionType, sessionType),
+            eq(leaderboardSessions.isActive, true)
+          )
+        )
 
-    const newSession: InsertLeaderboardSession = {
-      sessionType,
-      sessionKey: expectedSessionKey,
-      startDate: expectedStartDate,
-      endDate: expectedEndDate,
-      isActive: true,
-      updateIntervalMinutes: config.updateIntervalMinutes,
-      nextUpdateAt: new Date(Date.now() + config.updateIntervalMinutes * 60 * 1000),
+      // Clean up old leaderboard entries from deactivated sessions
+      if (oldActiveSessions.length > 0) {
+        console.log(`🧹 Cleaning up entries from ${oldActiveSessions.length} old ${sessionType} sessions...`)
+        for (const oldSession of oldActiveSessions) {
+          const deleteResult = await db
+            .delete(leaderboards)
+            .where(eq(leaderboards.sessionId, oldSession.id))
+          
+          console.log(`🗑️ Deleted ${deleteResult.rowCount || 0} entries from old ${sessionType} session ${oldSession.sessionKey} (session ID: ${oldSession.id})`)
+        }
+      }
+
+      console.log(`✅ Deactivated any existing ${sessionType} session before creating new one`)
+
+      const newSession: InsertLeaderboardSession = {
+        sessionType,
+        sessionKey: expectedSessionKey,
+        startDate: expectedStartDate,
+        endDate: expectedEndDate,
+        isActive: true,
+        updateIntervalMinutes: config.updateIntervalMinutes,
+        nextUpdateAt: new Date(Date.now() + config.updateIntervalMinutes * 60 * 1000),
+      }
+
+      // Attempt to insert - unique constraint on session_key will prevent duplicates at DB level
+      const [createdSession] = await db
+        .insert(leaderboardSessions)
+        .values(newSession)
+        .returning()
+
+      this.activeSessions.set(sessionType, createdSession)
+      console.log(`✓ Created new ${sessionType} session: ${expectedSessionKey}`)
+    } catch (error: any) {
+      // Handle unique constraint violation (duplicate key error)
+      // PostgreSQL error code 23505 = unique_violation
+      if (error.code === '23505' || error.message?.includes('unique') || error.message?.includes('duplicate')) {
+        console.warn(`⚠️  Duplicate session detected for ${sessionType}. Another process already created session ${expectedSessionKey}. Retrying fetch...`)
+        
+        // Another process created the session between our check and insert
+        // Fetch the session that was created by the other process
+        const [retrySession] = await db
+          .select()
+          .from(leaderboardSessions)
+          .where(
+            and(
+              eq(leaderboardSessions.sessionType, sessionType),
+              eq(leaderboardSessions.sessionKey, expectedSessionKey),
+              eq(leaderboardSessions.isActive, true)
+            )
+          )
+          .limit(1)
+
+        if (retrySession) {
+          this.activeSessions.set(sessionType, retrySession)
+          console.log(`✓ Retrieved existing ${sessionType} session after race condition: ${retrySession.sessionKey}`)
+        } else {
+          console.error(`❌ Failed to retrieve session after duplicate error for ${sessionType}`)
+        }
+      } else {
+        // Re-throw if it's a different error
+        console.error(`❌ Error creating ${sessionType} session:`, error)
+        throw error
+      }
     }
-
-    const [createdSession] = await db
-      .insert(leaderboardSessions)
-      .values(newSession)
-      .returning()
-
-    this.activeSessions.set(sessionType, createdSession)
-    console.log(`Created new ${sessionType} session: ${expectedSessionKey}`)
   }
 
   //  Start interval-based scheduling for all session types
@@ -240,9 +325,20 @@ class SessionManagementService {
   }
 
   //  Update leaderboards for a specific session
+  //  FIXED: Added proper cleanup and reset logic
     
   private async updateSessionLeaderboards(session: LeaderboardSession): Promise<void> {
-    console.log(`Updating leaderboards for session ${session.sessionKey}...`)
+    console.log(`🔄 Updating leaderboards for session ${session.sessionKey}...`)
+
+    // IMPORTANT: Clear existing leaderboard entries for this session first
+    // This ensures a clean slate for each update cycle
+    const deleteResult = await db
+      .delete(leaderboards)
+      .where(eq(leaderboards.sessionId, session.id))
+    
+    if (deleteResult.rowCount && deleteResult.rowCount > 0) {
+      console.log(`🧹 Cleared ${deleteResult.rowCount} existing leaderboard entries for session ${session.sessionKey}`)
+    }
 
     // Get all users with their stats
     const usersWithStats = await db
@@ -263,7 +359,7 @@ class SessionManagementService {
       .where(eq(users.username, sql`${users.username} IS NOT NULL`))
 
     if (usersWithStats.length === 0) {
-      console.log('No users found for leaderboard update')
+      console.log('⚠️ No users found for leaderboard update')
       return
     }
 
@@ -276,7 +372,7 @@ class SessionManagementService {
     // Sort by score (descending)
     userScores.sort((a, b) => b.score - a.score)
 
-    // Update or insert leaderboard entries
+    // Insert fresh leaderboard entries (no onConflictDoUpdate needed since we cleared them)
     for (let i = 0; i < userScores.length; i++) {
       const user = userScores[i]
       const rank = i + 1
@@ -292,18 +388,9 @@ class SessionManagementService {
           score: user.score,
           rank,
         })
-        .onConflictDoUpdate({
-          target: [leaderboards.userId, leaderboards.sessionId],
-          set: {
-            commits: this.getCommitsForSession(user, session.sessionType as SessionType),
-            score: user.score,
-            rank,
-            updatedAt: new Date(),
-          },
-        })
     }
 
-    console.log(`Updated leaderboards for ${userScores.length} users in session ${session.sessionKey}`)
+    console.log(`✅ Updated leaderboards for ${userScores.length} users in session ${session.sessionKey}`)
   }
 
   //  Calculate score for a user based on session type
@@ -371,6 +458,26 @@ class SessionManagementService {
     const startDate = timezoneService.getSessionStartDate(sessionType)
     const endDate = timezoneService.getSessionEndDate(sessionType)
 
+    // Check if the new session already exists (defensive check against race conditions)
+    const existingNewSession = await db
+      .select()
+      .from(leaderboardSessions)
+      .where(
+        and(
+          eq(leaderboardSessions.sessionType, sessionType),
+          eq(leaderboardSessions.sessionKey, sessionKey),
+          eq(leaderboardSessions.isActive, true)
+        )
+      )
+      .limit(1)
+
+    if (existingNewSession.length > 0) {
+      const session = existingNewSession[0]
+      this.activeSessions.set(sessionType, session)
+      console.log(`✓ New session already exists for ${sessionType}: ${session.sessionKey} (created by another process)`)
+      return
+    }
+
     // Get old active sessions before deactivating
     const oldActiveSessions = await db
       .select()
@@ -400,32 +507,64 @@ class SessionManagementService {
     if (oldActiveSessions.length > 0) {
       console.log(`Cleaning up entries from ${oldActiveSessions.length} old ${sessionType} sessions...`)
       for (const oldSession of oldActiveSessions) {
-        const deletedCount = await db
+        const deleteResult = await db
           .delete(leaderboards)
           .where(eq(leaderboards.sessionId, oldSession.id))
         
-        console.log(`Deleted entries from old ${sessionType} session ${oldSession.sessionKey} (session ID: ${oldSession.id})`)
+        console.log(`🗑️ Deleted ${deleteResult.rowCount || 0} entries from old ${sessionType} session ${oldSession.sessionKey} (session ID: ${oldSession.id})`)
       }
     }
 
-    // Create new session
-    const newSession: InsertLeaderboardSession = {
-      sessionType,
-      sessionKey,
-      startDate,
-      endDate,
-      isActive: true,
-      updateIntervalMinutes: config.updateIntervalMinutes,
-      nextUpdateAt: new Date(Date.now() + config.updateIntervalMinutes * 60 * 1000),
+    // Wrap in try-catch to handle race conditions
+    try {
+      // Create new session
+      const newSession: InsertLeaderboardSession = {
+        sessionType,
+        sessionKey,
+        startDate,
+        endDate,
+        isActive: true,
+        updateIntervalMinutes: config.updateIntervalMinutes,
+        nextUpdateAt: new Date(Date.now() + config.updateIntervalMinutes * 60 * 1000),
+      }
+
+      const [createdSession] = await db
+        .insert(leaderboardSessions)
+        .values(newSession)
+        .returning()
+
+      this.activeSessions.set(sessionType, createdSession)
+      console.log(`✓ Created new ${sessionType} session: ${sessionKey}`)
+    } catch (error: any) {
+      // Handle unique constraint violation (duplicate key error)
+      if (error.code === '23505' || error.message?.includes('unique') || error.message?.includes('duplicate')) {
+        console.warn(`⚠️  Duplicate session detected for ${sessionType}. Another process already created session ${sessionKey}. Retrying fetch...`)
+        
+        // Fetch the session that was created by the other process
+        const [retrySession] = await db
+          .select()
+          .from(leaderboardSessions)
+          .where(
+            and(
+              eq(leaderboardSessions.sessionType, sessionType),
+              eq(leaderboardSessions.sessionKey, sessionKey),
+              eq(leaderboardSessions.isActive, true)
+            )
+          )
+          .limit(1)
+
+        if (retrySession) {
+          this.activeSessions.set(sessionType, retrySession)
+          console.log(`✓ Retrieved existing ${sessionType} session after race condition: ${retrySession.sessionKey}`)
+        } else {
+          console.error(`❌ Failed to retrieve session after duplicate error for ${sessionType}`)
+        }
+      } else {
+        // Re-throw if it's a different error
+        console.error(`❌ Error creating new ${sessionType} session:`, error)
+        throw error
+      }
     }
-
-    const [createdSession] = await db
-      .insert(leaderboardSessions)
-      .values(newSession)
-      .returning()
-
-    this.activeSessions.set(sessionType, createdSession)
-    console.log(`Created new ${sessionType} session: ${sessionKey}`)
   }
 
 
