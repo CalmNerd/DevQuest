@@ -2,6 +2,9 @@ import { type NextRequest, NextResponse } from "next/server"
 import { githubService } from "@/services/external/github.service"
 import { getPowerProgress } from "@/services/api/power-level.service"
 import { storage } from "@/lib/storage"
+import { githubAchievementsScraperService } from "@/services/external/github-achievements-scraper.service"
+import { trendingDeveloperCheckService } from "@/services/api/trending-developer-check.service"
+import type { ScrapedGitHubAchievement, TrendingDeveloperBadgeData } from "@/types/github.types"
 
 // Track ongoing requests to prevent duplicates
 const ongoingRequests = new Map<string, Promise<any>>()
@@ -206,6 +209,81 @@ export async function GET(request: NextRequest, { params }: { params: { username
     // Generate a unique user ID based on GitHub ID or username
     const userId = githubData.id?.toString() || `user_${username.toLowerCase()}`
 
+    // Fetch GitHub native achievements
+    let githubNativeAchievements: ScrapedGitHubAchievement[] = []
+    try {
+      console.log(`Fetching GitHub native achievements for ${username}`)
+      githubNativeAchievements = await githubAchievementsScraperService.scrapeUserAchievements(username)
+      console.log(`Successfully fetched ${githubNativeAchievements.length} GitHub native achievements for ${username}`)
+    } catch (error) {
+      console.error(`Failed to fetch GitHub native achievements for ${username}:`, error)
+      // Don't fail the entire request if achievements scraping fails
+      // Try to load from database instead
+      try {
+        const existingUser = await storage.getUserByUsername(username)
+        if (existingUser) {
+          const existingAchievements = await storage.getGithubNativeAchievements(existingUser.id)
+          githubNativeAchievements = existingAchievements.map(a => ({
+            slug: a.slug,
+            name: a.name,
+            image: a.image,
+            tier: a.tier || null,
+            description: a.description || null,
+          }))
+          console.log(`Loaded ${githubNativeAchievements.length} cached GitHub native achievements for ${username}`)
+        }
+      } catch (dbError) {
+        console.error(`Failed to load cached GitHub native achievements:`, dbError)
+      }
+    }
+
+    // Check trending developer status
+    let trendingDeveloperBadges: TrendingDeveloperBadgeData[] = []
+    try {
+      console.log(`Checking trending developer status for ${username}`)
+      const trendingStatus = await trendingDeveloperCheckService.checkTrendingStatus(username, userId)
+      
+      // Convert badges to API format
+      trendingDeveloperBadges = trendingStatus.badges.map(badge => ({
+        timePeriod: badge.timePeriod as "daily" | "weekly" | "monthly",
+        level: badge.level,
+        isCurrent: badge.isCurrent,
+        currentRank: badge.currentRank,
+        bestRank: badge.bestRank,
+        language: badge.language,
+        firstTrendingAt: badge.firstTrendingAt.toISOString(),
+        lastTrendingAt: badge.lastTrendingAt.toISOString(),
+      }))
+      
+      console.log(`Found ${trendingDeveloperBadges.length} trending badges for ${username}`)
+      if (trendingStatus.isTrending) {
+        console.log(`🔥 ${username} is currently trending in: ${trendingStatus.trendingPeriods.join(", ")}`)
+      }
+    } catch (error) {
+      console.error(`Failed to check trending status for ${username}:`, error)
+      // Don't fail the entire request if trending check fails
+      // Try to load from database instead
+      try {
+        const existingUser = await storage.getUserByUsername(username)
+        if (existingUser) {
+          const cachedBadges = await storage.getTrendingDeveloperBadges(existingUser.id)
+          trendingDeveloperBadges = cachedBadges.map(badge => ({
+            timePeriod: badge.timePeriod as "daily" | "weekly" | "monthly",
+            level: badge.level,
+            isCurrent: badge.isCurrent,
+            currentRank: badge.currentRank,
+            bestRank: badge.bestRank,
+            language: badge.language,
+            firstTrendingAt: badge.firstTrendingAt.toISOString(),
+            lastTrendingAt: badge.lastTrendingAt.toISOString(),
+          }))
+          console.log(`Loaded ${trendingDeveloperBadges.length} cached trending badges for ${username}`)
+        }
+      } catch (dbError) {
+        console.error(`Failed to load cached trending badges:`, dbError)
+      }
+    }
+
     const profile = {
       // Basic GitHub data
       id: githubData.id,
@@ -275,6 +353,12 @@ export async function GET(request: NextRequest, { params }: { params: { username
       achievements: [], //handled by leveled achievements
       achievementProgress: await getUserAchievementProgress(userId),
 
+      // GitHub Native Achievements (scraped from GitHub)
+      githubNativeAchievements,
+
+      // Trending Developer Badges
+      trendingDeveloperBadges,
+
       // Metadata
       cached: false,
       lastUpdated: new Date().toISOString(),
@@ -284,7 +368,7 @@ export async function GET(request: NextRequest, { params }: { params: { username
     console.log(` Successfully built profile for ${username} with ${hasErrors ? "fallback" : "full"} data`)
 
     // Save data to database (async, don't wait for completion)
-    saveUserDataToDatabase(userId, username, githubData, statsData, repos).catch((error) => {
+    saveUserDataToDatabase(userId, username, githubData, statsData, repos, githubNativeAchievements, trendingDeveloperBadges).catch((error) => {
       console.error(` Failed to save data for ${username}:`, error)
     })
 
@@ -336,7 +420,9 @@ async function saveUserDataToDatabase(
   username: string,
   githubData: any,
   statsData: any,
-  repos: any[]
+  repos: any[],
+  githubNativeAchievements: ScrapedGitHubAchievement[],
+  trendingDeveloperBadges: TrendingDeveloperBadgeData[]
 ): Promise<void> {
   try {
     console.log(` Starting database save for ${username}`)
@@ -401,6 +487,27 @@ async function saveUserDataToDatabase(
     })
 
     console.log(` Saved GitHub stats for ${username}`)
+
+    // Save GitHub native achievements
+    if (githubNativeAchievements.length > 0) {
+      await storage.upsertGithubNativeAchievements(
+        userId,
+        githubNativeAchievements.map(achievement => ({
+          slug: achievement.slug,
+          name: achievement.name,
+          image: achievement.image,
+          tier: achievement.tier || null,
+          description: achievement.description || null,
+        }))
+      )
+      console.log(` Saved ${githubNativeAchievements.length} GitHub native achievements for ${username}`)
+    }
+
+    // Note: Trending developer badges are already saved by the trendingDeveloperCheckService
+    // during the check, so we don't need to save them here
+    if (trendingDeveloperBadges.length > 0) {
+      console.log(` User has ${trendingDeveloperBadges.length} trending developer badges`)
+    }
 
     // Check and unlock achievements
     const newAchievements = await storage.checkAndUnlockAchievements(userId)

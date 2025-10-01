@@ -350,10 +350,30 @@ export interface ProfileData {
     animationIntensity?: number
   }>
 
+  // GitHub Native Achievements (scraped from GitHub)
+  githubNativeAchievements: ScrapedGitHubAchievement[]
+
+  // Trending Developer Badges
+  trendingDeveloperBadges: TrendingDeveloperBadgeData[]
+
   // Metadata
   cached: boolean
   lastUpdated: string
   hasApiErrors: boolean
+}
+
+// Trending Developer Badge Data
+// Displayed on profile to show current and past trending status
+
+export interface TrendingDeveloperBadgeData {
+  timePeriod: "daily" | "weekly" | "monthly"
+  level: number
+  isCurrent: boolean
+  currentRank?: number | null
+  bestRank?: number | null
+  language?: string | null
+  firstTrendingAt: string
+  lastTrendingAt: string
 }
 
 export interface GitHubStatsData {
@@ -393,9 +413,7 @@ export interface GitHubStatsData {
   lastFetchedAt: Date
 }
 
-/**
- * Contributor information for a trending repository
- */
+// Contributor information for a trending repository
 export interface TrendingContributor {
   username: string
   avatarUrl: string
@@ -438,4 +456,12 @@ export interface TrendingRepoOptions {
 export interface TrendingDeveloperOptions {
   language?: string
   since?: 'daily' | 'weekly' | 'monthly'
+}
+
+export interface ScrapedGitHubAchievement {
+  slug: string
+  name: string
+  image: string
+  tier: string | null
+  description?: string | null
 }

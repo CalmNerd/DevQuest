@@ -103,94 +103,9 @@ export class LeveledAchievementDefinitionsService {
     return criteriaMap[category] || {}
   }
 
-  // Get all non-leveled achievement definitions (GitHub native, etc.)
+  // Get all non-leveled achievement definitions (Community, Time-based, Trending, etc.)
   static getNonLeveledDefinitions(): AchievementDefinition[] {
     return [
-      // GitHub Native Achievements - Keep these as-is
-      {
-        id: undefined,
-        name: "Quickdraw",
-        description: "Opened an issue or pull request within 5 minutes of a repository being created",
-        category: "github_native",
-        icon: "zap",
-        rarity: "rare",
-        tier: "gold",
-        criteria: { quickdraw: true },
-        points: 100,
-        isActive: true,
-        isGitHubNative: true,
-        source: "github"
-      },
-      {
-        id: undefined,
-        name: "Pair Extraordinaire",
-        description: "Co-authored commits merged into the default branch",
-        category: "github_native",
-        icon: "users",
-        rarity: "rare",
-        tier: "gold",
-        criteria: { pairExtraordinaire: true },
-        points: 100,
-        isActive: true,
-        isGitHubNative: true,
-        source: "github"
-      },
-      {
-        id: undefined,
-        name: "Pull Shark",
-        description: "2 pull requests merged into the default branch",
-        category: "github_native",
-        icon: "git-merge",
-        rarity: "common",
-        tier: "silver",
-        criteria: { pullShark: true },
-        points: 50,
-        isActive: true,
-        isGitHubNative: true,
-        source: "github"
-      },
-      {
-        id: undefined,
-        name: "Galaxy Brain",
-        description: "Answered a discussion",
-        category: "github_native",
-        icon: "brain",
-        rarity: "common",
-        tier: "silver",
-        criteria: { galaxyBrain: true },
-        points: 50,
-        isActive: true,
-        isGitHubNative: true,
-        source: "github"
-      },
-      {
-        id: undefined,
-        name: "YOLO",
-        description: "Merged a pull request without review",
-        category: "github_native",
-        icon: "skull",
-        rarity: "epic",
-        tier: "gold",
-        criteria: { yolo: true },
-        points: 200,
-        isActive: true,
-        isGitHubNative: true,
-        source: "github"
-      },
-      {
-        id: undefined,
-        name: "Public Sponsor",
-        description: "Sponsored an open source contributor",
-        category: "github_native",
-        icon: "heart",
-        rarity: "epic",
-        tier: "gold",
-        criteria: { publicSponsor: true },
-        points: 200,
-        isActive: true,
-        isGitHubNative: true,
-        source: "github"
-      },
 
       // Community Achievements - Keep these as-is
       {
@@ -278,57 +193,11 @@ export class LeveledAchievementDefinitionsService {
         isActive: true,
         isGitHubNative: false,
         source: "custom"
-      },
-
-      // Trending Achievements - Keep these as-is
-      {
-        id: undefined,
-        name: "Trending Developer",
-        description: "Featured in GitHub trending developers list",
-        category: "trending",
-        icon: "trending-up",
-        rarity: "epic",
-        tier: "gold",
-        criteria: { trendingDeveloper: true },
-        points: 300,
-        isActive: true,
-        isGitHubNative: false,
-        source: "trending"
-      },
-      {
-        id: undefined,
-        name: "Weekly Star",
-        description: "Featured in weekly trending developers",
-        category: "trending",
-        icon: "star",
-        rarity: "rare",
-        tier: "silver",
-        criteria: { trendingDeveloper: true },
-        points: 150,
-        isActive: true,
-        isGitHubNative: false,
-        source: "trending"
-      },
-      {
-        id: undefined,
-        name: "Monthly Rising Star",
-        description: "Featured in monthly trending developers",
-        category: "trending",
-        icon: "rocket",
-        rarity: "epic",
-        tier: "gold",
-        criteria: { trendingDeveloper: true },
-        points: 250,
-        isActive: true,
-        isGitHubNative: false,
-        source: "trending"
       }
     ]
   }
 
-  /**
-   * Get all achievement definitions (leveled + non-leveled)
-   */
+  // Get all achievement definitions (leveled + non-leveled)
   static getAllDefinitions(): AchievementDefinition[] {
     return [
       ...this.getAllLeveledDefinitions(),

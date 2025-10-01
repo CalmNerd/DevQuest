@@ -126,6 +126,50 @@ export const userAchievements = pgTable("user_achievements", {
   uniqueIndex("idx_user_achievement_unique").on(table.userId, table.achievementId),
 ])
 
+// GitHub Native Achievements table for storing scraped GitHub achievements
+// These are the achievements displayed on github.com/{username}?tab=achievements
+export const githubNativeAchievements = pgTable("github_native_achievements", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  slug: varchar("slug").notNull(), // Achievement slug (e.g., 'quickdraw', 'pull-shark')
+  name: varchar("name").notNull(), // Display name
+  image: text("image").notNull(), // URL to achievement badge image
+  tier: varchar("tier"), // Tier information (e.g., 'x3', 'Gold', 'Bronze')
+  description: text("description"), // Achievement description
+  fetchedAt: timestamp("fetched_at", { withTimezone: true }).defaultNow(), // When it was scraped
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_user_github_achievement_unique").on(table.userId, table.slug),
+  index("idx_github_achievement_user").on(table.userId),
+])
+
+// Trending Developer Badges table for tracking GitHub trending developer status
+// Users can have multiple badges (one per time period: daily, weekly, monthly)
+export const trendingDeveloperBadges = pgTable("trending_developer_badges", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  timePeriod: varchar("time_period").notNull(), // 'daily' | 'weekly' | 'monthly'
+  level: integer("level").default(1).notNull(), // Increases each time they trend again in same period
+  isCurrent: boolean("is_current").default(true).notNull(), // Currently trending or past achievement
+  currentRank: integer("current_rank"), // Current position in trending list (1 = top)
+  bestRank: integer("best_rank"), // Best rank ever achieved in this period
+  language: varchar("language"), // Programming language (if trending in specific language)
+  firstTrendingAt: timestamp("first_trending_at", { withTimezone: true }).notNull(), // First time detected as trending
+  lastTrendingAt: timestamp("last_trending_at", { withTimezone: true }).notNull(), // Last time detected as trending
+  lastCheckedAt: timestamp("last_checked_at", { withTimezone: true }).defaultNow(), // Last time we checked their status
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_user_trending_period_unique").on(table.userId, table.timePeriod),
+  index("idx_trending_user").on(table.userId),
+  index("idx_trending_current").on(table.isCurrent),
+  index("idx_trending_period").on(table.timePeriod),
+])
+
 // Leaderboard sessions table for managing contest-like sessions
 export const leaderboardSessions = pgTable(
   "leaderboard_sessions",
@@ -180,6 +224,8 @@ export const leaderboards = pgTable(
 export const usersRelations = relations(users, ({ one, many }) => ({
   githubStats: one(githubStats),
   achievements: many(userAchievements),
+  githubNativeAchievements: many(githubNativeAchievements),
+  trendingDeveloperBadges: many(trendingDeveloperBadges),
   leaderboardEntries: many(leaderboards),
 }))
 
@@ -202,6 +248,20 @@ export const userAchievementsRelations = relations(userAchievements, ({ one }) =
   achievement: one(achievements, {
     fields: [userAchievements.achievementId],
     references: [achievements.id],
+  }),
+}))
+
+export const githubNativeAchievementsRelations = relations(githubNativeAchievements, ({ one }) => ({
+  user: one(users, {
+    fields: [githubNativeAchievements.userId],
+    references: [users.id],
+  }),
+}))
+
+export const trendingDeveloperBadgesRelations = relations(trendingDeveloperBadges, ({ one }) => ({
+  user: one(users, {
+    fields: [trendingDeveloperBadges.userId],
+    references: [users.id],
   }),
 }))
 
@@ -259,6 +319,18 @@ export const insertLeaderboardSessionSchema = createInsertSchema(leaderboardSess
   updatedAt: true,
 })
 
+export const insertGithubNativeAchievementSchema = createInsertSchema(githubNativeAchievements).omit({
+  id: true,
+  fetchedAt: true,
+  updatedAt: true,
+})
+
+export const insertTrendingDeveloperBadgeSchema = createInsertSchema(trendingDeveloperBadges).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+})
+
 // Types
 export type UpsertUser = typeof users.$inferInsert
 export type User = typeof users.$inferSelect
@@ -272,3 +344,7 @@ export type Leaderboard = typeof leaderboards.$inferSelect
 export type InsertLeaderboard = typeof leaderboards.$inferInsert
 export type LeaderboardSession = typeof leaderboardSessions.$inferSelect
 export type InsertLeaderboardSession = typeof leaderboardSessions.$inferInsert
+export type GithubNativeAchievement = typeof githubNativeAchievements.$inferSelect
+export type InsertGithubNativeAchievement = typeof githubNativeAchievements.$inferInsert
+export type TrendingDeveloperBadge = typeof trendingDeveloperBadges.$inferSelect
+export type InsertTrendingDeveloperBadge = typeof trendingDeveloperBadges.$inferInsert

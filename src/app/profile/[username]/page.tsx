@@ -166,10 +166,10 @@ export default function ProfilePage() {
 
   // At this point, we know profile exists and dataReady is true, so we can safely access properties
   // Safely handle topLanguages with fallback for undefined/null values
-  const topLanguages = profile.topLanguages && typeof profile.topLanguages === 'object' 
+  const topLanguages = profile.topLanguages && typeof profile.topLanguages === 'object'
     ? Object.entries(profile.topLanguages)
-        .sort(([, a], [, b]) => (b as number) - (a as number))
-        .slice(0, 5)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .slice(0, 5)
     : []
 
   const totalLanguageRepos = profile.topLanguages && typeof profile.topLanguages === 'object'
@@ -244,17 +244,98 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
+                  {/* GitHub Native Achievements Preview */}
+                  {profile.githubNativeAchievements && profile.githubNativeAchievements.length > 0 && (
+                    <div className="mb-4">
+                      <p className="mb-2 text-sm font-medium text-muted-foreground flex items-center gap-1">
+                        <Github className="h-3 w-3" />
+                        GitHub Achievements
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.githubNativeAchievements.slice(0, 4).map((achievement) => (
+                          <div
+                            key={achievement.slug}
+                            className="flex items-center gap-2 rounded-lg border-2 border-primary/30 bg-primary/5 px-3 py-2 text-xs hover:border-primary/50 transition-colors"
+                            title={achievement.description || achievement.name}
+                          >
+                            <img
+                              src={achievement.image}
+                              alt={achievement.name}
+                              className="h-4 w-4 object-contain"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none'
+                              }}
+                            />
+                            <span className="font-medium">{achievement.name}</span>
+                            {achievement.tier && (
+                              <span className="text-muted-foreground text-[10px]">
+                                {achievement.tier}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                        {profile.githubNativeAchievements.length > 4 && (
+                          <div className="flex items-center rounded-lg border-2 border-dashed border-muted px-3 py-2 text-xs text-muted-foreground">
+                            +{profile.githubNativeAchievements.length - 4} more
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Trending Developer Badges */}
+                  {profile.trendingDeveloperBadges && profile.trendingDeveloperBadges.length > 0 && (
+                    <div className="mb-4">
+                      <p className="mb-2 text-sm font-medium text-muted-foreground flex items-center gap-1">
+                        <Flame className="h-3 w-3" />
+                        Trending Developer
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.trendingDeveloperBadges.map((badge) => {
+                          const displayRank = badge.isCurrent ? badge.currentRank : badge.bestRank
+                          return (
+                            <div
+                              key={badge.timePeriod}
+                              className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2 text-xs transition-colors ${badge.isCurrent
+                                  ? 'border-orange-500/50 bg-orange-500/10 hover:border-orange-500 text-orange-600 dark:text-orange-400'
+                                  : 'border-muted bg-muted/30 text-muted-foreground'
+                                }`}
+                              title={`${badge.isCurrent ? 'Currently' : 'Was'} trending ${badge.timePeriod}${displayRank ? ` at rank #${displayRank}` : ''}${badge.language ? ` in ${badge.language}` : ''}`}
+                            >
+                              <TrendingUp className="h-3 w-3" />
+                              <span className="font-medium capitalize">{badge.timePeriod}</span>
+                              {displayRank && (
+                                <span className="rounded-full bg-current/20 px-1.5 text-[10px] font-bold">
+                                  #{displayRank}
+                                </span>
+                              )}
+                              {badge.level > 1 && (
+                                <span className="rounded-full bg-current/20 px-1.5 text-[10px] font-bold">
+                                  Lv.{badge.level}
+                                </span>
+                              )}
+                              {!badge.isCurrent && (
+                                <span className="text-[10px]">(Past)</span>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Custom Achievements Preview */}
                   {profile.achievementProgress && profile.achievementProgress.length > 0 && (
                     <div className="mb-4">
-                      <p className="mb-2 text-sm font-medium text-muted-foreground">Top Achievements</p>
+                      <p className="mb-2 text-sm font-medium text-muted-foreground">Top Custom Achievements</p>
                       <div className="flex flex-wrap gap-2">
                         {profile.achievementProgress
                           .filter(achievement => achievement.isUnlocked)
                           .map(achievement => ({
                             ...achievement,
                             // Use level for sorting (non-leveled achievements get level 1 for sorting)
-                            sortLevel: achievement.isLeveled && achievement.currentLevel !== undefined 
-                              ? achievement.currentLevel 
+                            sortLevel: achievement.isLeveled && achievement.currentLevel !== undefined
+                              ? achievement.currentLevel
                               : 1
                           }))
                           .sort((a, b) => b.sortLevel - a.sortLevel)
@@ -262,7 +343,7 @@ export default function ProfilePage() {
                           .map((achievement) => {
                             const IconComponent = getIconComponent(achievement.achievement.icon)
                             const rarityColor = getRarityColor(achievement.achievement.rarity)
-                            
+
                             return (
                               <div
                                 key={achievement.achievement.id}
@@ -272,8 +353,8 @@ export default function ProfilePage() {
                                 <IconComponent className="h-4 w-4" />
                                 <span className="font-medium">{achievement.achievement.name}</span>
                                 <span className="text-muted-foreground">
-                                  {(achievement as any).isLeveled && (achievement as any).currentLevel !== undefined 
-                                    ? `Lv.${(achievement as any).currentLevel}` 
+                                  {(achievement as any).isLeveled && (achievement as any).currentLevel !== undefined
+                                    ? `Lv.${(achievement as any).currentLevel}`
                                     : ''}
                                 </span>
                               </div>
@@ -714,9 +795,206 @@ export default function ProfilePage() {
             </TabsContent>
 
             <TabsContent value="achievements" className="space-y-6">
+              {/* Trending Developer Badges Section */}
+              {profile.trendingDeveloperBadges && profile.trendingDeveloperBadges.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Flame className="h-5 w-5 text-orange-500" />
+                      Trending Developer Badges
+                      <Badge variant="secondary" className="ml-2">
+                        {profile.trendingDeveloperBadges.length}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-3">
+                      {profile.trendingDeveloperBadges.map((badge) => {
+                        const badgeDate = new Date(badge.lastTrendingAt)
+                        const formattedDate = badgeDate.toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })
+
+                        return (
+                          <motion.div
+                            key={badge.timePeriod}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.2 }}
+                            className={`relative overflow-hidden rounded-lg border-2 p-5 transition-all ${badge.isCurrent
+                                ? 'border-orange-500 bg-gradient-to-br from-orange-500/10 to-orange-500/5 shadow-lg shadow-orange-500/20'
+                                : 'border-muted bg-muted/30'
+                              }`}
+                          >
+                            {/* Current Badge Indicator */}
+                            {badge.isCurrent && (
+                              <div className="absolute top-2 right-2">
+                                <div className="relative flex h-3 w-3">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex items-start gap-3">
+                              {/* Icon */}
+                              <div className={`flex-shrink-0 rounded-lg p-3 ${badge.isCurrent ? 'bg-orange-500/20' : 'bg-muted'
+                                }`}>
+                                <TrendingUp className={`h-6 w-6 ${badge.isCurrent ? 'text-orange-500' : 'text-muted-foreground'
+                                  }`} />
+                              </div>
+
+                              {/* Content */}
+                              <div className="flex-1 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="font-semibold capitalize text-base">
+                                    {badge.timePeriod} Trending
+                                  </h4>
+                                  {badge.level > 1 && (
+                                    <Badge variant={badge.isCurrent ? "default" : "secondary"} className="text-xs">
+                                      Level {badge.level}
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                <div className="space-y-1 text-sm">
+                                  <p className={badge.isCurrent ? 'text-orange-600 dark:text-orange-400 font-medium' : 'text-muted-foreground'}>
+                                    {badge.isCurrent ? '🔥 Currently Trending!' : '📊 Past Achievement'}
+                                  </p>
+
+                                  {/* Show current rank if trending, best rank if past */}
+                                  {badge.isCurrent && badge.currentRank && (
+                                    <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">
+                                      Current Rank: <span className="text-base">#{badge.currentRank}</span>
+                                    </p>
+                                  )}
+
+                                  {!badge.isCurrent && badge.bestRank && (
+                                    <p className="text-xs font-medium text-muted-foreground">
+                                      Best Rank: <span className="text-sm font-semibold">#{badge.bestRank}</span>
+                                    </p>
+                                  )}
+
+                                  {badge.language && (
+                                    <p className="text-xs text-muted-foreground">
+                                      Language: <span className="font-medium">{badge.language}</span>
+                                    </p>
+                                  )}
+
+                                  <p className="text-xs text-muted-foreground">
+                                    {badge.isCurrent ? 'Last seen' : 'Last trending'}: {formattedDate}
+                                  </p>
+
+                                  {badge.level > 1 && (
+                                    <p className="text-xs text-muted-foreground">
+                                      Achieved {badge.level} times
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Progress bar for level */}
+                            {badge.level > 1 && (
+                              <div className="mt-3 pt-3 border-t border-current/10">
+                                <div className="flex items-center justify-between text-xs mb-1">
+                                  <span className="text-muted-foreground">Achievements</span>
+                                  <span className={badge.isCurrent ? 'text-orange-600 dark:text-orange-400 font-semibold' : 'text-muted-foreground'}>
+                                    {badge.level}
+                                  </span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all ${badge.isCurrent ? 'bg-gradient-to-r from-orange-500 to-orange-600' : 'bg-muted-foreground/50'
+                                      }`}
+                                    style={{ width: `${Math.min(100, badge.level * 10)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </motion.div>
+                        )
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* GitHub Native Achievements Section */}
+              {profile.githubNativeAchievements && profile.githubNativeAchievements.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Github className="h-5 w-5 text-primary" />
+                      GitHub Native Achievements
+                      <Badge variant="secondary" className="ml-2">
+                        {profile.githubNativeAchievements.length}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {profile.githubNativeAchievements.map((achievement) => (
+                        <motion.div
+                          key={achievement.slug}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.2 }}
+                          className="group relative overflow-hidden rounded-lg border-2 border-primary/20 bg-card p-4 transition-all hover:border-primary/50 hover:shadow-lg"
+                        >
+                          <div className="flex items-start gap-3">
+                            {/* Achievement Image */}
+                            <div className="relative flex-shrink-0">
+                              <img
+                                src={achievement.image}
+                                alt={achievement.name}
+                                className="h-16 w-16 rounded-lg object-contain"
+                                onError={(e) => {
+                                  // Fallback to Trophy icon if image fails to load
+                                  const target = e.target as HTMLImageElement
+                                  target.style.display = 'none'
+                                  const fallback = target.nextElementSibling as HTMLElement
+                                  if (fallback) fallback.style.display = 'flex'
+                                }}
+                              />
+                              <div className="hidden h-16 w-16 items-center justify-center rounded-lg bg-primary/10">
+                                <Trophy className="h-8 w-8 text-primary" />
+                              </div>
+                            </div>
+
+                            {/* Achievement Info */}
+                            <div className="flex-1 space-y-1">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-semibold text-sm">{achievement.name}</h4>
+                                {achievement.tier && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {achievement.tier}
+                                  </Badge>
+                                )}
+                              </div>
+                              {achievement.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-2">
+                                  {achievement.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Hover effect gradient */}
+                          <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/5 to-primary/0 opacity-0 transition-opacity group-hover:opacity-100" />
+                        </motion.div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Custom Achievement Progress */}
               <AchievementProgressDisplay
                 achievements={profile.achievementProgress as any || []}
-                title="Achievement Progress"
+                title="Custom Achievements"
                 showProgress={true}
                 groupBy="category"
               />
