@@ -17,6 +17,7 @@ import { ProfileCardTrigger } from '@/components/features/discord-profile-card'
 import { getPowerLevelFromPoints } from '@/lib/utils'
 import Header from "@/components/layout/Header"
 import { formatDateOnly, formatSessionDate } from "@/lib/date-formatter"
+import { Globe } from "@/components/ui/globe"
 
 interface LeaderboardEntry {
   rank: number
@@ -223,11 +224,15 @@ export default function LeaderboardsPage() {
   const currentLeaderboard = leaderboards[activeTab]
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-transparent to-background">
       {/* Header */}
       <Header />
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="relative container mx-auto px-4 py-6">
+        <div className="absolute inset-0 -z-10 container bg-gradient-to-b from-transparent to-black h-screen mx-auto">
+          <div className="absolute inset-0 h-screen bg-gradient-to-b from-transparent to-black -z-10 blur-3xl"></div>
+          <Globe className="-z-20" />
+        </div>
+        <div className="flex flex-col pt-28 gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold">Leaderboards</h1>
             <p className="text-muted-foreground">
