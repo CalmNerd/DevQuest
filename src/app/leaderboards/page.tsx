@@ -10,13 +10,13 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ProfileCardTrigger } from '@/components/features/discord-profile-card'
 import { getPowerLevelFromPoints } from '@/lib/utils'
 import Header from "@/components/layout/Header"
-import { formatDateOnly, formatSessionDate } from "@/lib/date-formatter"
+import { formatLeaderboardDateOnly, formatSessionDateNoTz } from "@/lib/date-formatter"
 import { Globe } from "@/components/ui/globe"
 
 interface LeaderboardEntry {
@@ -75,7 +75,7 @@ export default function LeaderboardsPage() {
   const [leaderboards, setLeaderboards] = useState<{ [key: string]: LeaderboardData }>({})
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [activeTab, setActiveTab] = useState("points")
+  const [selectedLeaderboardType, setSelectedLeaderboardType] = useState("commits")
   const [timeFilter, setTimeFilter] = useState("overall")
   const [loadingMore, setLoadingMore] = useState<{ [key: string]: boolean }>({})
 
@@ -86,6 +86,14 @@ export default function LeaderboardsPage() {
     { key: "streak", label: "Streak", icon: Flame, color: "text-orange-400", description: "Longest contribution streak" },
     { key: "repos", label: "Repositories", icon: BookOpen, color: "text-blue-400", description: "Total repositories" },
     { key: "followers", label: "Followers", icon: Users, color: "text-pink-400", description: "GitHub followers" },
+  ]
+
+  const timePeriods = [
+    { key: "daily", label: "Daily" },
+    { key: "weekly", label: "Weekly" },
+    { key: "monthly", label: "Monthly" },
+    { key: "yearly", label: "Yearly" },
+    { key: "overall", label: "Overall" },
   ]
 
   const fetchLeaderboard = async (type: string, page: number = 1, append: boolean = false) => {
@@ -129,11 +137,11 @@ export default function LeaderboardsPage() {
     }
   }
 
-  const fetchAllLeaderboards = async () => {
+  const fetchCurrentLeaderboard = async () => {
     setLoading(true)
     setRefreshing(true)
 
-    await Promise.all(leaderboardTypes.map((type) => fetchLeaderboard(type.key, 1)))
+    await fetchLeaderboard(selectedLeaderboardType, 1)
 
     setLoading(false)
     setRefreshing(false)
@@ -158,8 +166,8 @@ export default function LeaderboardsPage() {
 
   useEffect(() => {
     resetLeaderboards()
-    fetchAllLeaderboards()
-  }, [timeFilter])
+    fetchCurrentLeaderboard()
+  }, [selectedLeaderboardType, timeFilter])
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -189,12 +197,12 @@ export default function LeaderboardsPage() {
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Unknown"
-    return formatDateOnly(dateString)
+    return formatLeaderboardDateOnly(dateString)
   }
 
   const formatSessionDateLocal = (dateString?: string) => {
     if (!dateString) return "Unknown"
-    return formatSessionDate(dateString)
+    return formatSessionDateNoTz(dateString)
   }
 
   const getSessionTimeRemaining = (endDate?: string) => {
@@ -221,187 +229,202 @@ export default function LeaderboardsPage() {
     return num.toString()
   }
 
-  const currentLeaderboard = leaderboards[activeTab]
+  const currentLeaderboard = leaderboards[selectedLeaderboardType]
+  const selectedLeaderboardTypeInfo = leaderboardTypes.find(type => type.key === selectedLeaderboardType)
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-transparent to-background">
+    <div className="min-h-screen bg-gradient-to-b from-transparent via-background to-background">
       {/* Header */}
       <Header />
-      <div className="relative container mx-auto px-4 py-6">
-        <div className="absolute inset-0 -z-10 container bg-gradient-to-b from-transparent to-black h-screen mx-auto">
+      <div className="relative container mx-auto px-4 py-6 bg-gradient-to-b from-transparent to-background">
+        {/* <div className="absolute inset-0 -z-10 container bg-gradient-to-b from-transparent to-black h-screen mx-auto">
           <div className="absolute inset-0 h-screen bg-gradient-to-b from-transparent to-black -z-10 blur-3xl"></div>
-          <Globe className="-z-20" />
-        </div>
-        <div className="flex flex-col pt-28 gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Leaderboards</h1>
+        </div> */}
+        <Globe className="-z-20 -top-10" />
+        <div className="flex flex-col pt-16 gap-6">
+          <div className="flex flex-col gap-4 items-center justify-between">
+            <h1 className="text-7xl font-bold bg-gradient-to-b from-foreground via-foreground to-background text-transparent bg-clip-text">Leaderboards</h1>
             <p className="text-muted-foreground">
-              Compete with developers worldwide • {timeFilter === 'overall' ? 'All Time Rankings' : `${timeFilter.charAt(0).toUpperCase() + timeFilter.slice(1)} Rankings`}
+              Compete with developers worldwide
             </p>
           </div>
-          <div className="flex items-center gap-4">
+
+          {/* Leaderboard Type Selection */}
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Time Range:</span>
-              <Select value={timeFilter} onValueChange={setTimeFilter}>
-                <SelectTrigger className="w-32">
+              {/* <span className="text-sm font-medium">Type:</span> */}
+              <Select value={selectedLeaderboardType} onValueChange={setSelectedLeaderboardType}>
+                <SelectTrigger className="w-48">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="overall">All Time</SelectItem>
-                  <SelectItem value="yearly">This Year</SelectItem>
-                  <SelectItem value="monthly">This Month</SelectItem>
-                  <SelectItem value="weekly">This Week</SelectItem>
-                  <SelectItem value="daily">Today</SelectItem>
+                  {leaderboardTypes.map((type) => (
+                    <SelectItem key={type.key} value={type.key}>
+                      <div className="flex items-center gap-2">
+                        <type.icon className="h-4 w-4" />
+                        {type.label}
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchAllLeaderboards}
-              disabled={refreshing}
-              className="gap-2 bg-transparent"
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchCurrentLeaderboard}
+                disabled={refreshing}
+                className="gap-2 bg-transparent"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+
+              {/* <span className="text-sm font-medium">Period:</span> */}
+              {/* Time Period Tabs - Only show for Commits */}
+              {selectedLeaderboardType === 'commits' && (
+                <Tabs value={timeFilter} onValueChange={setTimeFilter}>
+                  <TabsList className="grid w-full grid-cols-5">
+                    {timePeriods.map((period) => (
+                      <TabsTrigger key={period.key} value={period.key} className="text-xs">
+                        {period.label}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Leaderboard Tabs */}
+      <div className="container mx-auto px-4 py-8 bg-background">
+        {/* Leaderboard Content */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
-              {leaderboardTypes.map((type) => (
-                <TabsTrigger key={type.key} value={type.key} className="gap-2 text-xs md:text-sm">
-                  <type.icon className="h-4 w-4" />
-                  <span className="hidden md:inline">{type.label}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            {leaderboardTypes.map((type) => (
-              <TabsContent key={type.key} value={type.key} className="space-y-4">
-                {loading && !currentLeaderboard ? (
-                  <div className="flex items-center justify-center py-12">
-                    <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : currentLeaderboard?.entries?.length > 0 ? (
-                  <>
-                    {/* Session Information Banner */}
-                    {currentLeaderboard.sessionInfo && (
-                      <Card className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-blue-200 dark:border-blue-800">
-                        <CardContent className="p-4">
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-blue-600" />
-                              <span className="font-semibold text-blue-900 dark:text-blue-100">
-                                {currentLeaderboard.sessionInfo.sessionType.charAt(0).toUpperCase() + currentLeaderboard.sessionInfo.sessionType.slice(1)} Session
-                              </span>
-                              <Badge variant="outline" className="text-xs">
-                                {currentLeaderboard.sessionInfo.sessionKey}
-                              </Badge>
+          <div className="space-y-4">
+            {loading && !currentLeaderboard ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : currentLeaderboard?.entries?.length > 0 ? (
+              <>
+                {/* Session Information Banner */}
+                {currentLeaderboard.sessionInfo && selectedLeaderboardType === 'commits' && timeFilter !== 'overall' && (
+                  <Card className="mb-6 bg-gradient-to-r from-yellow-950/20 to-card">
+                    <CardContent className="flex relative gap-4 items-center p-4">
+                      <div className="flex-1 w-1/3 flex items-center justify-center">
+                        <Trophy className="size-16 text-yellow-600" />
+                      </div>
+                      <div className="flex flex-col gap-2 w-2/3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-2xl text-blue-900 dark:text-blue-100">
+                            {currentLeaderboard.sessionInfo.sessionType.charAt(0).toUpperCase() + currentLeaderboard.sessionInfo.sessionType.slice(1)} Session
+                          </span>
+                          {/* <Badge variant="outline" className="text-xs">
+                            {currentLeaderboard.sessionInfo.sessionKey}
+                          </Badge> */}
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 text-sm">
+                          <div className="flex w-full gap-4">
+                            <div>
+                              <span className="text-muted-foreground">Started: </span>
+                              <span className="font-medium">{formatSessionDateLocal(currentLeaderboard.sessionInfo.startDate)}</span>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                              <div>
-                                <span className="text-muted-foreground">Started: </span>
-                                <span className="font-medium">{formatSessionDateLocal(currentLeaderboard.sessionInfo.startDate)}</span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Ends: </span>
-                                <span className="font-medium">{formatSessionDateLocal(currentLeaderboard.sessionInfo.endDate)}</span>
-                              </div>
-                              <div className="md:col-span-2">
-                                <span className="text-muted-foreground">Time remaining: </span>
-                                <span className="font-medium text-green-600 dark:text-green-400">
-                                  {getSessionTimeRemaining(currentLeaderboard.sessionInfo.endDate)}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="mt-2 text-xs text-muted-foreground bg-blue-100 dark:bg-blue-900/30 p-2 rounded">
-                              <strong>Note:</strong> All times are displayed in UTC to ensure fair competition worldwide.
-                              Sessions follow strict UTC boundaries regardless of your local timezone.
+                            <div>
+                              <span className="text-muted-foreground">Ends: </span>
+                              <span className="font-medium">{formatSessionDateLocal(currentLeaderboard.sessionInfo.endDate)}</span>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    )}
-
-                    {/* Top 3 Podium */}
-                    <Card className="mb-8">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Trophy className="h-5 w-5 text-yellow-400" />
-                          Top Performers - {type.label}
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground">{type.description}</p>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid gap-4 md:grid-cols-3">
-                          {currentLeaderboard.entries?.slice(0, 3).map((entry, index) => (
-                            <motion.div
-                              key={entry.username}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: index * 0.1 }}
-                              className={`relative rounded-lg p-6 text-center ${index === 0
-                                ? "bg-gradient-to-br from-yellow-400/10 to-yellow-600/10 border-yellow-400/20"
-                                : index === 1
-                                  ? "bg-gradient-to-br from-gray-400/10 to-gray-600/10 border-gray-400/20"
-                                  : "bg-gradient-to-br from-amber-600/10 to-amber-800/10 border-amber-600/20"
-                                } border`}
-                            >
-                              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                <Badge variant={getRankBadgeVariant(entry.rank)} className="gap-1">
-                                  {getRankIcon(entry.rank)}#{entry.rank}
-                                </Badge>
-                              </div>
-                              <ProfileCardTrigger username={entry.username}>
-                                <Avatar className="mx-auto mb-4 h-16 w-16 border-2 border-primary/20">
-                                  <AvatarImage src={entry.avatar_url || "/placeholder.svg"} alt={entry.username} />
-                                  <AvatarFallback>{entry.username[0].toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                                <h3 className="mb-1 font-semibold hover:text-primary">
-                                  {entry.name || entry.username}
-                                </h3>
-                                <p className="mb-2 text-sm text-muted-foreground">@{entry.username}</p>
-                                <div className="text-2xl font-bold text-primary">
-                                  {type.key === "points" ? `Level ${getPowerLevelFromPoints(entry.score)}` : formatNumber(entry.score)}
-                                </div>
-                                <div className="text-sm text-muted-foreground">{type.label}</div>
-
-                                {/* Additional user info */}
-                                {entry.bio && (
-                                  <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{entry.bio}</p>
-                                )}
-                                {entry.location && (
-                                  <div className="mt-1 flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                                    <MapPin className="h-3 w-3" />
-                                    {entry.location}
-                                  </div>
-                                )}
-                              </ProfileCardTrigger>
-                            </motion.div>
-                          ))}
+                          <div className="md:col-span-2">
+                            <span className="text-muted-foreground">Time remaining: </span>
+                            <span className="font-medium text-green-600 dark:text-green-400">
+                              {getSessionTimeRemaining(currentLeaderboard.sessionInfo.endDate)}
+                            </span>
+                          </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                        {/* <div className="mt-2 text-xs text-muted-foreground bg-blue-100 dark:bg-blue-900/30 p-2 rounded">
+                          <strong>Note:</strong> All times are displayed in UTC to ensure fair competition worldwide.
+                          Sessions follow strict UTC boundaries regardless of your local timezone.
+                        </div> */}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
+                {/* Top 3 Podium */}
+                <Card className="mb-8">
+                  <CardHeader className="flex items-center justify-between gap-2">
+                    <div>
+                      <CardTitle className="flex items-center gap-2 text-xl font-semibold">
+                        <Trophy className="h-5 w-5 text-yellow-400" />
+                        Top Performers - {selectedLeaderboardTypeInfo?.label}
+                      </CardTitle>
+                      {/* <p className="text-sm text-muted-foreground">{selectedLeaderboardTypeInfo?.description}</p> */}
+                    </div>
+                    <div>
+                      {/* <CardTitle className="flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5" />
+                        Full Rankings - {selectedLeaderboardTypeInfo?.label}
+                      </CardTitle> */}
+                      <p className="text-sm text-muted-foreground">
+                        {/* {currentLeaderboard.pagination?.totalCount || 0} total developers • */}
+                        Last updated: {formatDate(currentLeaderboard.lastUpdated)}
+                      </p>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-3 py-6">
+                      {currentLeaderboard.entries?.slice(0, 3).map((entry, index) => (
+                        <motion.div
+                          key={entry.username}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          className={`relative rounded-lg p-6 text-center ${index === 0
+                            ? "bg-gradient-to-br from-yellow-400/10 to-yellow-600/10 border-yellow-400/20"
+                            : index === 1
+                              ? "bg-gradient-to-br from-gray-400/10 to-gray-600/10 border-gray-400/20"
+                              : "bg-gradient-to-br from-amber-600/10 to-amber-800/10 border-amber-600/20"
+                            } border`}
+                        >
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                            <Badge variant={getRankBadgeVariant(entry.rank)} className="gap-1">
+                              {getRankIcon(entry.rank)}#{entry.rank}
+                            </Badge>
+                          </div>
+                          <ProfileCardTrigger username={entry.username}>
+                            <Avatar className="mx-auto mb-4 h-16 w-16 border-2 border-primary/20">
+                              <AvatarImage src={entry.avatar_url || "/placeholder.svg"} alt={entry.username} />
+                              <AvatarFallback>{entry.username[0].toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <h3 className="mb-1 font-semibold hover:text-primary">
+                              {entry.name || entry.username}
+                            </h3>
+                            <p className="mb-2 text-sm text-muted-foreground">@{entry.username}</p>
+                            <div className="text-2xl font-bold text-primary">
+                              {selectedLeaderboardType === "points" ? `Level ${getPowerLevelFromPoints(entry.score)}` : formatNumber(entry.score)}
+                            </div>
+                            <div className="text-sm text-muted-foreground">{selectedLeaderboardTypeInfo?.label}</div>
+
+                            {/* Additional user info */}
+                            {entry.bio && (
+                              <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{entry.bio}</p>
+                            )}
+                            {entry.location && (
+                              <div className="mt-1 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                                <MapPin className="h-3 w-3" />
+                                {entry.location}
+                              </div>
+                            )}
+                          </ProfileCardTrigger>
+                        </motion.div>
+                      ))}
+                    </div>
                     {/* Full Leaderboard */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <TrendingUp className="h-5 w-5" />
-                          Full Rankings - {type.label}
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                          {currentLeaderboard.pagination?.totalCount || 0} total developers •
-                          Last updated: {formatDate(currentLeaderboard.lastUpdated)}
-                        </p>
-                      </CardHeader>
-                      <CardContent>
+                    <Card className="px-0 border-none">
+                      <CardContent className="px-0">
                         <div className="space-y-2">
                           <AnimatePresence>
                             {currentLeaderboard.entries?.map((entry, index) => (
@@ -469,9 +492,9 @@ export default function LeaderboardsPage() {
 
                                 <div className="text-right">
                                   <div className="text-lg font-bold">
-                                    {type.key === "points" ? `Level ${getPowerLevelFromPoints(entry.score)}` : formatNumber(entry.score)}
+                                    {selectedLeaderboardType === "points" ? `Level ${getPowerLevelFromPoints(entry.score)}` : formatNumber(entry.score)}
                                   </div>
-                                  <div className="text-sm text-muted-foreground">{type.label}</div>
+                                  <div className="text-sm text-muted-foreground">{selectedLeaderboardTypeInfo?.label}</div>
                                 </div>
 
                                 <div className="flex items-center gap-2">
@@ -507,11 +530,11 @@ export default function LeaderboardsPage() {
                           <div className="mt-6 flex justify-center">
                             <Button
                               variant="outline"
-                              onClick={() => handleLoadMore(activeTab)}
-                              disabled={loadingMore[activeTab]}
+                              onClick={() => handleLoadMore(selectedLeaderboardType)}
+                              disabled={loadingMore[selectedLeaderboardType]}
                               className="gap-2"
                             >
-                              {loadingMore[activeTab] ? (
+                              {loadingMore[selectedLeaderboardType] ? (
                                 <>
                                   <RefreshCw className="h-4 w-4 animate-spin" />
                                   Loading...
@@ -534,27 +557,27 @@ export default function LeaderboardsPage() {
                         )}
                       </CardContent>
                     </Card>
-                  </>
-                ) : (
-                  <Card>
-                    <CardContent className="py-12 text-center">
-                      <Trophy className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                      <p className="text-muted-foreground">No leaderboard data available.</p>
-                      <p className="text-sm text-muted-foreground">
-                        Search for some profiles to populate the rankings!
-                      </p>
-                      <Button
-                        className="mt-4"
-                        onClick={() => window.location.href = '/explore'}
-                      >
-                        Explore Profiles
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
-            ))}
-          </Tabs>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Trophy className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                  <p className="text-muted-foreground">No leaderboard data available.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Search for some profiles to populate the rankings!
+                  </p>
+                  <Button
+                    className="mt-4"
+                    onClick={() => window.location.href = '/explore'}
+                  >
+                    Explore Profiles
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </motion.div>
 
 
@@ -575,7 +598,10 @@ export default function LeaderboardsPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className="group transition-all hover:scale-105 hover:shadow-lg">
+                <Card
+                  className={`group transition-all hover:scale-105 hover:shadow-lg cursor-pointer ${type.key === selectedLeaderboardType ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => setSelectedLeaderboardType(type.key)}
+                >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       <div

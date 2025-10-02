@@ -389,6 +389,44 @@ export class TimezoneService {
     }, timezone)
   }
 
+  static formatSessionDateTimeNoTz(
+    utcTimestamp: string | Date,
+    timezone?: string
+  ): string {
+    const userTimezone = timezone || this.getUserTimezone()
+    const date = typeof utcTimestamp === 'string'
+      ? DateTime.fromISO(utcTimestamp, { zone: 'utc' })
+      : DateTime.fromJSDate(utcTimestamp, { zone: 'utc' })
+
+    if (!date.isValid) {
+      return 'Invalid Date'
+    }
+
+    const localDate = date.setZone(userTimezone)
+
+    // Format as "07:15 PM, Jan 1, 2025"
+    return localDate.toFormat('hh:mm a, MMM d, yyyy')
+  }
+
+  static formatForLeaderboard(
+    utcTimestamp: string | Date,
+    timezone?: string
+  ): string {
+    const userTimezone = timezone || this.getUserTimezone()
+    const date = typeof utcTimestamp === 'string'
+      ? DateTime.fromISO(utcTimestamp, { zone: 'utc' })
+      : DateTime.fromJSDate(utcTimestamp, { zone: 'utc' })
+
+    if (!date.isValid) {
+      return 'Invalid Date'
+    }
+
+    const localDate = date.setZone(userTimezone)
+
+    // Format as "Jan 1, 2025" for leaderboard data
+    return localDate.toFormat('MMM d, yyyy')
+  }
+
   static getTimezoneInfo(timezone?: string): {
     name: string
     offset: string
@@ -504,5 +542,9 @@ export const formatLeaderboardTime = (utcTimestamp: string | Date, timezone?: st
   TimezoneService.formatLeaderboardTime(utcTimestamp, timezone)
 export const formatSessionTime = (utcTimestamp: string | Date, timezone?: string) =>
   TimezoneService.formatSessionTime(utcTimestamp, timezone)
+export const formatSessionDateTimeNoTz = (utcTimestamp: string | Date, timezone?: string) =>
+  TimezoneService.formatSessionDateTimeNoTz(utcTimestamp, timezone)
+export const formatForLeaderboard = (utcTimestamp: string | Date, timezone?: string) =>
+  TimezoneService.formatForLeaderboard(utcTimestamp, timezone)
 export const getUserTimezone = () => TimezoneService.getUserTimezone()
 export const getTimezoneInfo = (timezone?: string) => TimezoneService.getTimezoneInfo(timezone)

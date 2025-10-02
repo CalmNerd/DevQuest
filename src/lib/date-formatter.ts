@@ -60,10 +60,14 @@ export class DateFormatter {
     return TimezoneService.formatSessionTime(utcTimestamp, timezone)
   }
 
-  /**
-   * Format a UTC timestamp for profile display
-   * Shows date in a user-friendly format
-   */
+  static sessionNoTz(utcTimestamp: string | Date, timezone?: string): string {
+    return TimezoneService.formatSessionDateTimeNoTz(utcTimestamp, timezone)
+  }
+
+  static leaderboardDate(utcTimestamp: string | Date, timezone?: string): string {
+    return TimezoneService.formatForLeaderboard(utcTimestamp, timezone)
+  }
+
   static profile(utcTimestamp: string | Date, timezone?: string): string {
     return TimezoneService.formatForDisplay(utcTimestamp, {
       year: 'numeric',
@@ -72,10 +76,6 @@ export class DateFormatter {
     }, timezone)
   }
 
-  /**
-   * Format a UTC timestamp for admin display
-   * Shows full date and time with timezone
-   */
   static admin(utcTimestamp: string | Date, timezone?: string): string {
     return TimezoneService.formatForDisplay(utcTimestamp, {
       year: 'numeric',
@@ -88,26 +88,18 @@ export class DateFormatter {
     }, timezone)
   }
 
-  /**
-   * Format a UTC timestamp for cache display
-   * Shows time with relative indicator
-   */
   static cache(utcTimestamp: string | Date, timezone?: string): string {
     const relative = TimezoneService.formatRelativeTime(utcTimestamp, timezone)
     const time = TimezoneService.formatTimeOnly(utcTimestamp, timezone)
-    
+
     // If it's very recent, show relative time, otherwise show time
     if (relative.includes('minute') || relative.includes('second') || relative.includes('hour')) {
       return relative
     }
-    
+
     return time
   }
 
-  /**
-   * Format a UTC timestamp for contribution graph
-   * Shows date in a compact format
-   */
   static contribution(utcTimestamp: string | Date, timezone?: string): string {
     return TimezoneService.formatForDisplay(utcTimestamp, {
       month: 'short',
@@ -115,10 +107,6 @@ export class DateFormatter {
     }, timezone)
   }
 
-  /**
-   * Format a UTC timestamp for repository display
-   * Shows relative time for recent updates, date for older ones
-   */
   static repository(utcTimestamp: string | Date, timezone?: string): string {
     const now = new Date()
     const date = typeof utcTimestamp === 'string' ? new Date(utcTimestamp) : utcTimestamp
@@ -137,10 +125,6 @@ export class DateFormatter {
     }, timezone)
   }
 
-  /**
-   * Format a UTC timestamp for issue display
-   * Shows relative time for recent issues, date for older ones
-   */
   static issue(utcTimestamp: string | Date, timezone?: string): string {
     const now = new Date()
     const date = typeof utcTimestamp === 'string' ? new Date(utcTimestamp) : utcTimestamp
@@ -159,10 +143,6 @@ export class DateFormatter {
     }, timezone)
   }
 
-  /**
-   * Get a smart formatted date based on context
-   * Automatically chooses the best format based on how recent the date is
-   */
   static smart(utcTimestamp: string | Date, timezone?: string): string {
     const now = new Date()
     const date = typeof utcTimestamp === 'string' ? new Date(utcTimestamp) : utcTimestamp
@@ -194,30 +174,18 @@ export class DateFormatter {
     }, timezone)
   }
 
-  /**
-   * Check if a date is today in user's timezone
-   */
   static isToday(utcTimestamp: string | Date, timezone?: string): boolean {
     return TimezoneService.isToday(utcTimestamp, timezone)
   }
 
-  /**
-   * Check if a date is yesterday in user's timezone
-   */
   static isYesterday(utcTimestamp: string | Date, timezone?: string): boolean {
     return TimezoneService.isYesterday(utcTimestamp, timezone)
   }
 
-  /**
-   * Get timezone information for display
-   */
   static getTimezoneInfo(timezone?: string) {
     return TimezoneService.getTimezoneInfo(timezone)
   }
 
-  /**
-   * Get user's current timezone
-   */
   static getUserTimezone(): string {
     return TimezoneService.getUserTimezone()
   }
@@ -227,29 +195,33 @@ export class DateFormatter {
 export const dateFormatter = DateFormatter
 
 // Export individual methods for easy access
-export const formatDate = (utcTimestamp: string | Date, timezone?: string) => 
+export const formatDate = (utcTimestamp: string | Date, timezone?: string) =>
   DateFormatter.format(utcTimestamp, timezone)
-export const formatRelativeDate = (utcTimestamp: string | Date, timezone?: string) => 
+export const formatRelativeDate = (utcTimestamp: string | Date, timezone?: string) =>
   DateFormatter.relative(utcTimestamp, timezone)
-export const formatDateOnly = (utcTimestamp: string | Date, timezone?: string) => 
+export const formatDateOnly = (utcTimestamp: string | Date, timezone?: string) =>
   DateFormatter.date(utcTimestamp, timezone)
-export const formatTimeOnly = (utcTimestamp: string | Date, timezone?: string) => 
+export const formatTimeOnly = (utcTimestamp: string | Date, timezone?: string) =>
   DateFormatter.time(utcTimestamp, timezone)
-export const formatLeaderboardDate = (utcTimestamp: string | Date, timezone?: string) => 
+export const formatLeaderboardDate = (utcTimestamp: string | Date, timezone?: string) =>
   DateFormatter.leaderboard(utcTimestamp, timezone)
-export const formatSessionDate = (utcTimestamp: string | Date, timezone?: string) => 
+export const formatSessionDate = (utcTimestamp: string | Date, timezone?: string) =>
   DateFormatter.session(utcTimestamp, timezone)
-export const formatProfileDate = (utcTimestamp: string | Date, timezone?: string) => 
+export const formatSessionDateNoTz = (utcTimestamp: string | Date, timezone?: string) =>
+  DateFormatter.sessionNoTz(utcTimestamp, timezone)
+export const formatLeaderboardDateOnly = (utcTimestamp: string | Date, timezone?: string) =>
+  DateFormatter.leaderboardDate(utcTimestamp, timezone)
+export const formatProfileDate = (utcTimestamp: string | Date, timezone?: string) =>
   DateFormatter.profile(utcTimestamp, timezone)
-export const formatAdminDate = (utcTimestamp: string | Date, timezone?: string) => 
+export const formatAdminDate = (utcTimestamp: string | Date, timezone?: string) =>
   DateFormatter.admin(utcTimestamp, timezone)
-export const formatCacheDate = (utcTimestamp: string | Date, timezone?: string) => 
+export const formatCacheDate = (utcTimestamp: string | Date, timezone?: string) =>
   DateFormatter.cache(utcTimestamp, timezone)
-export const formatContributionDate = (utcTimestamp: string | Date, timezone?: string) => 
+export const formatContributionDate = (utcTimestamp: string | Date, timezone?: string) =>
   DateFormatter.contribution(utcTimestamp, timezone)
-export const formatRepositoryDate = (utcTimestamp: string | Date, timezone?: string) => 
+export const formatRepositoryDate = (utcTimestamp: string | Date, timezone?: string) =>
   DateFormatter.repository(utcTimestamp, timezone)
-export const formatIssueDate = (utcTimestamp: string | Date, timezone?: string) => 
+export const formatIssueDate = (utcTimestamp: string | Date, timezone?: string) =>
   DateFormatter.issue(utcTimestamp, timezone)
-export const formatSmartDate = (utcTimestamp: string | Date, timezone?: string) => 
+export const formatSmartDate = (utcTimestamp: string | Date, timezone?: string) =>
   DateFormatter.smart(utcTimestamp, timezone)
