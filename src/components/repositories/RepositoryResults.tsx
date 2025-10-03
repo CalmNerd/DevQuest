@@ -103,7 +103,7 @@ export function RepositoryResults({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="grid grid-cols-2 gap-4"
+            className="grid grid-cols-1 lg:grid-cols-2 gap-4"
           >
             {repositories.map((repo, index) => (
               <motion.div
@@ -120,10 +120,10 @@ export function RepositoryResults({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mt-6 flex items-center justify-between"
+            className="mt-6 flex items-center justify-center lg:justify-between"
           >
             {pagination && (
-              <p className="text-sm text-muted-foreground">
+              <p className="hidden lg:block text-sm text-muted-foreground">
                 Showing {((pagination.current_page - 1) * pagination.per_page) + 1} to{' '}
                 {Math.min(pagination.current_page * pagination.per_page, pagination.total_count)} of{' '}
                 {pagination.total_count.toLocaleString()} repositories

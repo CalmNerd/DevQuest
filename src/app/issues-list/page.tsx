@@ -249,7 +249,7 @@ export default function ExplorePage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <Header />
-      <div className=" backdrop-blur-sm mx-auto container">
+      <div className=" backdrop-blur-sm mx-auto container px-4 ">
         <div className="container mx-auto py-6">
           <div className="flex flex-col gap-4">
             <div>
@@ -409,7 +409,7 @@ export default function ExplorePage() {
         {/* Issues List */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-lg lg:text-xl font-semibold">
               {pagination.total_count > 0 ? `${pagination.total_count.toLocaleString()}` : issues.length} {filters.state} issues
               {error && <span className="text-sm text-muted-foreground ml-2">(showing mock data)</span>}
             </h2>
@@ -425,7 +425,7 @@ export default function ExplorePage() {
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {issues.map((issue, index) => (
               <motion.div
                 key={issue.id}
@@ -709,8 +709,8 @@ export default function ExplorePage() {
               className="mt-8"
             >
               <div className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">
+                <div className="flex items-center justify-center lg:justify-between">
+                  <div className="hidden lg:block text-sm text-muted-foreground">
                     Showing {((pagination.current_page - 1) * pagination.per_page) + 1} to{" "}
                     {Math.min(pagination.current_page * pagination.per_page, pagination.total_count)} of{" "}
                     {pagination.total_count.toLocaleString()} issues

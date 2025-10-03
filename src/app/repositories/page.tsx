@@ -1,73 +1,12 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import React from 'react'
 import { motion } from 'framer-motion'
-import { Github, Zap, Code, TrendingUp } from 'lucide-react'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { RepositorySearchForm } from '@/components/repositories/RepositorySearchForm'
-import { RepositoryResults } from '@/components/repositories/RepositoryResults'
+import { TrendingUp } from 'lucide-react'
 import TrendingPreview from '@/components/repositories/TrendingPreview'
-import { useRepositories } from '@/hooks/client'
-import { useDebounce } from '@/hooks/client'
-import { RepositorySearchFilters } from '@/types/github.types'
-import { popularLanguages, trendingTopics } from '@/lib/constants'
 
 
 export default function RepositoryHomePage() {
-  const searchParams = useSearchParams()
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
-  const debouncedSearchQuery = useDebounce(searchQuery, 500)
-
-  const { repositories, loading, error, pagination, fetchRepositories } = useRepositories()
-
-  // Handle search from URL params
-  useEffect(() => {
-    const query = searchParams.get('q')
-    if (query) {
-      setSearchQuery(query)
-      handleSearch(query)
-    }
-  }, [searchParams])
-
-  // Debounced search effect
-  useEffect(() => {
-    if (debouncedSearchQuery && debouncedSearchQuery !== searchQuery) {
-      handleSearch(debouncedSearchQuery)
-    }
-  }, [debouncedSearchQuery])
-
-  const handleSearch = (query: string) => {
-    const filters: RepositorySearchFilters = {
-      query,
-      sort: 'stars',
-      order: 'desc',
-      page: 1,
-      per_page: 10
-    }
-    fetchRepositories(filters)
-  }
-
-  const handlePageChange = (page: number) => {
-    const filters: RepositorySearchFilters = {
-      query: searchQuery,
-      sort: 'stars',
-      order: 'desc',
-      page,
-      per_page: 10
-    }
-    fetchRepositories(filters)
-  }
-
-  const quickSearches = [
-    { query: 'react', label: 'React', icon: <Code className="h-4 w-4" /> },
-    { query: 'vue', label: 'Vue.js', icon: <Code className="h-4 w-4" /> },
-    { query: 'angular', label: 'Angular', icon: <Code className="h-4 w-4" /> },
-    { query: 'typescript', label: 'TypeScript', icon: <Code className="h-4 w-4" /> },
-    { query: 'machine learning', label: 'ML', icon: <Zap className="h-4 w-4" /> },
-    { query: 'blockchain', label: 'Blockchain', icon: <Zap className="h-4 w-4" /> }
-  ]
 
   return (
     <div className="flex flex-col h-full">
@@ -81,139 +20,22 @@ export default function RepositoryHomePage() {
             className="text-center space-y-2"
           >
             <div className="flex items-center justify-center gap-3 mb-4">
-              <Github className="h-8 w-8 text-primary" />
-              <h1 className="text-3xl font-bold">Discover Repositories</h1>
+              <TrendingUp className="h-8 w-8 text-primary" />
+              <h1 className="text-3xl font-bold">GitHub Trending</h1>
             </div>
             <p className="text-muted-foreground text-lg">
-              Search and explore millions of open source repositories on GitHub
+              Discover what's trending on GitHub today
             </p>
           </motion.div>
 
-          {/* Search Form */}
+          {/* Trending Preview */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className='bg-card rounded-xl border'
           >
-            <RepositorySearchForm
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              onSearch={handleSearch}
-              loading={loading}
-              placeholder="Search repositories by name, description, or topic..."
-              className='p-0 border-none'
-            />
-            {/* Quick Searches */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card className='pt-0 border-none gap-1'>
-              <CardHeader>
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-primary" />
-                  Quick Searches
-                </h3>
-              </CardHeader>
-              <CardContent className='py-0'>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-                  {quickSearches.map((search) => (
-                    <Button
-                      key={search.query}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSearchQuery(search.query)
-                        handleSearch(search.query)
-                      }}
-                      className="justify-start gap-2 h-10"
-                    >
-                      {search.icon}
-                      {search.label}
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <TrendingPreview />
           </motion.div>
-          </motion.div>
-
-          {/* Trending Preview - Only show when no search query */}
-          {!searchQuery && repositories.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <TrendingPreview />
-            </motion.div>
-          )}
-          
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-4"
-          >
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Found</p>
-                    <p className="text-2xl font-bold">{pagination.total_count.toLocaleString()}</p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-primary" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Languages</p>
-                    <p className="text-2xl font-bold">{popularLanguages.length}+</p>
-                  </div>
-                  <Code className="h-8 w-8 text-primary" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Topics</p>
-                    <p className="text-2xl font-bold">{trendingTopics.length}+</p>
-                  </div>
-                  <Github className="h-8 w-8 text-primary" />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Search Results */}
-          {(searchQuery || repositories.length > 0) && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <RepositoryResults
-                repositories={repositories}
-                loading={loading}
-                error={error}
-                searchQuery={searchQuery}
-                pagination={pagination}
-                onPageChange={handlePageChange}
-                emptyMessage="No repositories found"
-                emptyDescription="Try adjusting your search query or explore the quick searches above."
-              />
-            </motion.div>
-          )}
         </div>
       </div>
     </div>
