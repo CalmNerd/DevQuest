@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ProfileCardTrigger } from '@/components/features/discord-profile-card'
+import { DiscordProfileDialog } from '@/components/features/discord-profile-dialog'
 import { getPowerLevelFromPoints } from '@/lib/utils'
 import Header from "@/components/layout/Header"
 import { formatLeaderboardDateOnly, formatSessionDateNoTz } from "@/lib/date-formatter"
@@ -172,11 +172,11 @@ export default function LeaderboardsPage() {
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Crown className="h-5 w-5 text-yellow-400" />
+        return <Crown className="h-5 w-5 text-yellow-200" />
       case 2:
-        return <Medal className="h-5 w-5 text-gray-400" />
+        return <Medal className="h-5 w-5 text-gray-200" />
       case 3:
-        return <Award className="h-5 w-5 text-amber-600" />
+        return <Award className="h-5 w-5 text-amber-200" />
       default:
         return <div className="flex h-5 w-5 items-center justify-center text-sm font-bold">{rank}</div>
     }
@@ -243,9 +243,11 @@ export default function LeaderboardsPage() {
         <Globe className="-z-20 -top-10" />
         <div className="flex flex-col pt-16 gap-6">
           <div className="flex flex-col gap-4 items-center justify-between">
-            <h1 className="text-7xl font-bold bg-gradient-to-b from-foreground via-foreground to-background text-transparent bg-clip-text">Leaderboards</h1>
-            <p className="text-muted-foreground">
-              Compete with developers worldwide
+          <h1 className="text-7xl font-bold bg-gradient-to-b from-foreground via-foreground to-background text-transparent bg-clip-text">Leaderboards</h1>
+            <p className="text-muted-foreground text-lg">
+              <span className="text-[#22E26F] font-semibold">Compete</span> with developers 
+              <span className="text-[#FF6B35] font-semibold"> worldwide</span> and 
+              <span className="text-[#8B5CF6] font-semibold"> climb</span> the ranks
             </p>
           </div>
 
@@ -310,16 +312,19 @@ export default function LeaderboardsPage() {
               </div>
             ) : currentLeaderboard?.entries?.length > 0 ? (
               <>
-                {/* Session Information Banner */}
+                {/* Enhanced Session Information Banner */}
                 {currentLeaderboard.sessionInfo && selectedLeaderboardType === 'commits' && timeFilter !== 'overall' && (
-                  <Card className="mb-6 bg-gradient-to-r from-yellow-950/20 to-card">
-                    <CardContent className="flex relative gap-4 items-center p-4">
+                  <Card className="mb-6 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-blue-500/10 border-2 border-purple-400/30 shadow-2xl shadow-purple-500/20 backdrop-blur-sm">
+                    <CardContent className="flex relative gap-6 items-center p-6">
                       <div className="flex-1 w-1/3 flex items-center justify-center">
-                        <Trophy className="size-16 text-yellow-600" />
+                        <div className="relative">
+                          <Trophy className="size-20 text-yellow-400 drop-shadow-2xl animate-pulse" />
+                          <div className="absolute inset-0 size-20 bg-yellow-400/20 rounded-full blur-xl animate-pulse"></div>
+                        </div>
                       </div>
-                      <div className="flex flex-col gap-2 w-2/3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-2xl text-blue-900 dark:text-blue-100">
+                      <div className="flex flex-col gap-3 w-2/3">
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-3xl bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
                             {currentLeaderboard.sessionInfo.sessionType.charAt(0).toUpperCase() + currentLeaderboard.sessionInfo.sessionType.slice(1)} Session
                           </span>
                           {/* <Badge variant="outline" className="text-xs">
@@ -327,98 +332,125 @@ export default function LeaderboardsPage() {
                           </Badge> */}
                         </div>
                         <div className="grid grid-cols-1 gap-4 text-sm">
-                          <div className="flex w-full gap-4">
+                          <div className="flex w-full gap-6">
                             <div>
                               <span className="text-muted-foreground">Started: </span>
-                              <span className="font-medium">{formatSessionDateLocal(currentLeaderboard.sessionInfo.startDate)}</span>
+                              <span className="font-semibold text-blue-400">{formatSessionDateLocal(currentLeaderboard.sessionInfo.startDate)}</span>
                             </div>
                             <div>
                               <span className="text-muted-foreground">Ends: </span>
-                              <span className="font-medium">{formatSessionDateLocal(currentLeaderboard.sessionInfo.endDate)}</span>
+                              <span className="font-semibold text-pink-400">{formatSessionDateLocal(currentLeaderboard.sessionInfo.endDate)}</span>
                             </div>
                           </div>
                           <div className="md:col-span-2">
                             <span className="text-muted-foreground">Time remaining: </span>
-                            <span className="font-medium text-green-600 dark:text-green-400">
+                            <span className="font-bold text-green-400 bg-green-400/10 px-2 py-1 rounded-md">
                               {getSessionTimeRemaining(currentLeaderboard.sessionInfo.endDate)}
                             </span>
                           </div>
                         </div>
-                        {/* <div className="mt-2 text-xs text-muted-foreground bg-blue-100 dark:bg-blue-900/30 p-2 rounded">
-                          <strong>Note:</strong> All times are displayed in UTC to ensure fair competition worldwide.
-                          Sessions follow strict UTC boundaries regardless of your local timezone.
-                        </div> */}
                       </div>
                     </CardContent>
                   </Card>
                 )}
 
                 {/* Top 3 Podium */}
-                <Card className="mb-8">
+                <Card className="mb-8 bg-gradient-to-br from-card/50 to-card/30 backdrop-blur-sm border-0 shadow-2xl">
                   <CardHeader className="flex items-center justify-between gap-2">
                     <div>
-                      <CardTitle className="flex items-center gap-2 text-xl font-semibold">
-                        <Trophy className="h-5 w-5 text-yellow-400" />
-                        Top Performers - {selectedLeaderboardTypeInfo?.label}
+                      <CardTitle className="flex items-center gap-2 text-2xl font-bold">
+                        <Trophy className="h-6 w-6 text-yellow-400 drop-shadow-lg" />
+                        <span className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 bg-clip-text text-transparent">
+                          Top Performers
+                        </span>
+                        <span className="text-muted-foreground">- {selectedLeaderboardTypeInfo?.label}</span>
                       </CardTitle>
-                      {/* <p className="text-sm text-muted-foreground">{selectedLeaderboardTypeInfo?.description}</p> */}
                     </div>
                     <div>
-                      {/* <CardTitle className="flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5" />
-                        Full Rankings - {selectedLeaderboardTypeInfo?.label}
-                      </CardTitle> */}
                       <p className="text-sm text-muted-foreground">
-                        {/* {currentLeaderboard.pagination?.totalCount || 0} total developers • */}
                         Last updated: {formatDate(currentLeaderboard.lastUpdated)}
                       </p>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-4 md:grid-cols-3 py-6">
+                    <div className="grid gap-6 md:grid-cols-3 py-8">
                       {currentLeaderboard.entries?.slice(0, 3).map((entry, index) => (
                         <motion.div
                           key={entry.username}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className={`relative rounded-lg p-6 text-center ${index === 0
-                            ? "bg-gradient-to-br from-yellow-400/10 to-yellow-600/10 border-yellow-400/20"
-                            : index === 1
-                              ? "bg-gradient-to-br from-gray-400/10 to-gray-600/10 border-gray-400/20"
-                              : "bg-gradient-to-br from-amber-600/10 to-amber-800/10 border-amber-600/20"
-                            } border`}
+                          initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ delay: index * 0.15, type: "spring", stiffness: 100 }}
+                          whileHover={{ scale: 1.05, y: -5 }}
+                          className={`relative rounded-2xl p-8 text-center transform transition-all duration-300 ${
+                            index === 0
+                              ? "bg-gradient-to-br from-yellow-400/20 via-yellow-500/15 to-orange-500/20 border-2 border-yellow-400/40 shadow-2xl shadow-yellow-500/20"
+                              : index === 1
+                                ? "bg-gradient-to-br from-gray-400/20 via-gray-500/15 to-slate-500/20 border-2 border-gray-400/40 shadow-2xl shadow-gray-500/20"
+                                : "bg-gradient-to-br from-amber-600/20 via-orange-500/15 to-red-500/20 border-2 border-amber-600/40 shadow-2xl shadow-amber-500/20"
+                          } backdrop-blur-sm`}
+                          style={{
+                            transform: index === 0 ? 'translateY(-10px)' : index === 1 ? 'translateY(-5px)' : 'translateY(0px)'
+                          }}
                         >
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                            <Badge variant={getRankBadgeVariant(entry.rank)} className="gap-1">
-                              {getRankIcon(entry.rank)}#{entry.rank}
-                            </Badge>
+                          {/* Premium rank badge */}
+                          <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                            <div className={`relative px-4 py-2 rounded-full text-sm font-bold shadow-lg ${
+                              index === 0 
+                                ? "bg-gradient-to-r from-yellow-400 to-yellow-600 text-black border-2 border-yellow-300"
+                                : index === 1
+                                  ? "bg-gradient-to-r from-gray-400 to-gray-600 text-white border-2 border-gray-300"
+                                  : "bg-gradient-to-r from-amber-600 to-orange-600 text-white border-2 border-amber-400"
+                            }`}>
+                              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-transparent"></div>
+                              <span className="relative flex items-center gap-1">
+                                {getRankIcon(entry.rank)}#{entry.rank}
+                              </span>
+                            </div>
                           </div>
-                          <ProfileCardTrigger username={entry.username}>
-                            <Avatar className="mx-auto mb-4 h-16 w-16 border-2 border-primary/20">
-                              <AvatarImage src={entry.avatar_url || "/placeholder.svg"} alt={entry.username} />
-                              <AvatarFallback>{entry.username[0].toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <h3 className="mb-1 font-semibold hover:text-primary">
+
+                          <DiscordProfileDialog username={entry.username}>
+                            {/* Enhanced avatar with premium styling */}
+                            <div className={`mx-auto mb-6 h-20 w-20 rounded-full border-4 shadow-2xl ${
+                              index === 0 
+                                ? "border-yellow-400/60 shadow-yellow-500/30"
+                                : index === 1
+                                  ? "border-gray-400/60 shadow-gray-500/30"
+                                  : "border-amber-600/60 shadow-amber-500/30"
+                            }`}>
+                              <Avatar className="h-full w-full">
+                                <AvatarImage src={entry.avatar_url || "/placeholder.svg"} alt={entry.username} />
+                                <AvatarFallback className="text-lg font-bold">{entry.username[0].toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                            </div>
+
+                            <h3 className="mb-2 text-lg font-bold hover:text-primary transition-colors">
                               {entry.name || entry.username}
                             </h3>
-                            <p className="mb-2 text-sm text-muted-foreground">@{entry.username}</p>
-                            <div className="text-2xl font-bold text-primary">
+                            <p className="mb-3 text-sm text-muted-foreground">@{entry.username}</p>
+                            
+                            {/* Enhanced score display */}
+                            <div className={`text-3xl font-bold mb-2 ${
+                              index === 0 
+                                ? "bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent"
+                                : index === 1
+                                  ? "bg-gradient-to-r from-gray-400 to-gray-600 bg-clip-text text-transparent"
+                                  : "bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent"
+                            }`}>
                               {selectedLeaderboardType === "points" ? `Level ${getPowerLevelFromPoints(entry.score)}` : formatNumber(entry.score)}
                             </div>
-                            <div className="text-sm text-muted-foreground">{selectedLeaderboardTypeInfo?.label}</div>
+                            <div className="text-sm font-medium text-muted-foreground">{selectedLeaderboardTypeInfo?.label}</div>
 
-                            {/* Additional user info */}
+                            {/* Additional user info with colorful accents */}
                             {entry.bio && (
-                              <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{entry.bio}</p>
+                              <p className="mt-3 text-xs text-muted-foreground line-clamp-2 rounded-lg">{entry.bio}</p>
                             )}
                             {entry.location && (
-                              <div className="mt-1 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                              <div className="mt-2 flex items-center justify-center gap-1 text-xs text-muted-foreground rounded-lg">
                                 <MapPin className="h-3 w-3" />
                                 {entry.location}
                               </div>
                             )}
-                          </ProfileCardTrigger>
+                          </DiscordProfileDialog>
                         </motion.div>
                       ))}
                     </div>
@@ -445,7 +477,7 @@ export default function LeaderboardsPage() {
                                   )}
                                 </div>
 
-                                <ProfileCardTrigger
+                                <DiscordProfileDialog
                                   username={entry.username}
                                   className="flex flex-1 items-center gap-4"
                                 >
@@ -461,7 +493,7 @@ export default function LeaderboardsPage() {
                                     <div className="text-sm text-muted-foreground">@{entry.username}</div>
 
                                     {/* Extended user info */}
-                                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                                    <div className="mt-1 hidden md:flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                                       {entry.followers !== undefined && (
                                         <div className="flex items-center gap-1">
                                           <Users className="h-3 w-3" />
@@ -488,13 +520,25 @@ export default function LeaderboardsPage() {
                                       )}
                                     </div>
                                   </div>
-                                </ProfileCardTrigger>
+                                </DiscordProfileDialog>
 
                                 <div className="text-right">
-                                  <div className="text-lg font-bold">
+                                  <div className={`text-xl font-bold ${
+                                    entry.rank <= 3 
+                                      ? entry.rank === 1 
+                                        ? "bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent"
+                                        : entry.rank === 2
+                                          ? "bg-gradient-to-r from-gray-400 to-gray-600 bg-clip-text text-transparent"
+                                          : "bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent"
+                                      : entry.rank <= 10
+                                        ? "text-blue-400"
+                                        : entry.rank <= 50
+                                          ? "text-green-400"
+                                          : "text-muted-foreground"
+                                  }`}>
                                     {selectedLeaderboardType === "points" ? `Level ${getPowerLevelFromPoints(entry.score)}` : formatNumber(entry.score)}
                                   </div>
-                                  <div className="text-sm text-muted-foreground">{selectedLeaderboardTypeInfo?.label}</div>
+                                  <div className="text-sm font-medium text-muted-foreground">{selectedLeaderboardTypeInfo?.label}</div>
                                 </div>
 
                                 <div className="flex items-center gap-2">
@@ -581,49 +625,67 @@ export default function LeaderboardsPage() {
         </motion.div>
 
 
-        {/* Stats Overview */}
+        {/* Enhanced Stats Overview */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+          className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
         >
           {leaderboardTypes.map((type, index) => {
             const data = leaderboards[type.key]
             const topScore = data?.entries?.[0]?.score || 0
+            const colors = [
+              { bg: 'from-purple-500/20 to-pink-500/20', border: 'border-purple-400/40', shadow: 'shadow-purple-500/20', text: 'text-purple-400' },
+              { bg: 'from-yellow-500/20 to-orange-500/20', border: 'border-yellow-400/40', shadow: 'shadow-yellow-500/20', text: 'text-yellow-400' },
+              { bg: 'from-green-500/20 to-emerald-500/20', border: 'border-green-400/40', shadow: 'shadow-green-500/20', text: 'text-green-400' },
+              { bg: 'from-orange-500/20 to-red-500/20', border: 'border-orange-400/40', shadow: 'shadow-orange-500/20', text: 'text-orange-400' },
+              { bg: 'from-blue-500/20 to-cyan-500/20', border: 'border-blue-400/40', shadow: 'shadow-blue-500/20', text: 'text-blue-400' },
+              { bg: 'from-pink-500/20 to-rose-500/20', border: 'border-pink-400/40', shadow: 'shadow-pink-500/20', text: 'text-pink-400' }
+            ]
+            const colorScheme = colors[index % colors.length]
 
             return (
               <motion.div
                 key={type.key}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1 }}
+                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ delay: index * 0.1, type: "spring", stiffness: 100 }}
+                whileHover={{ scale: 1.05, y: -5 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <Card
-                  className={`group transition-all hover:scale-105 hover:shadow-lg cursor-pointer ${type.key === selectedLeaderboardType ? 'ring-2 ring-primary' : ''}`}
+                  className={`group transition-all duration-300 cursor-pointer backdrop-blur-sm border-2 ${
+                    type.key === selectedLeaderboardType 
+                      ? `ring-4 ring-primary/50 bg-gradient-to-br ${colorScheme.bg} ${colorScheme.border} shadow-2xl ${colorScheme.shadow}`
+                      : `bg-gradient-to-br ${colorScheme.bg} ${colorScheme.border} hover:shadow-xl ${colorScheme.shadow}`
+                  }`}
                   onClick={() => setSelectedLeaderboardType(type.key)}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-4">
                       <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20`}
+                        className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-white/10 to-transparent backdrop-blur-sm border border-white/20 group-hover:scale-110 transition-transform duration-300`}
                       >
-                        <type.icon className={`h-5 w-5 ${type.color}`} />
+                        <type.icon className={`h-6 w-6 ${colorScheme.text} drop-shadow-lg`} />
                       </div>
-                      <div>
-                        <div className="text-lg font-bold">
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-xl font-black ${colorScheme.text} mb-1`}>
                           {type.key === "points" ? `Level ${getPowerLevelFromPoints(topScore)}` : formatNumber(topScore)}
                         </div>
-                        <div className="text-xs text-muted-foreground">{type.label}</div>
+                        <div className="text-sm font-semibold text-foreground">{type.label}</div>
                         <div className="text-xs text-muted-foreground capitalize">
                           {timeFilter === 'overall' ? 'All Time' : timeFilter}
                         </div>
                         {data?.sessionInfo && (
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-muted-foreground mt-1">
                             {formatSessionDateLocal(data.sessionInfo.startDate)} - {formatSessionDateLocal(data.sessionInfo.endDate)}
                           </div>
                         )}
                       </div>
                     </div>
+                    
+                    {/* Animated background elements */}
+                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                   </CardContent>
                 </Card>
               </motion.div>

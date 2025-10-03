@@ -1,6 +1,6 @@
 import { motion } from "framer-motion"
 import { Badge, Button, Card, CardContent } from "../ui"
-import { ProfileCardTrigger } from "../features/discord-profile-card"
+import { DiscordProfileDialog } from "../features/discord-profile-dialog"
 import { Trophy } from "lucide-react"
 import Link from "next/link"
 
@@ -48,7 +48,7 @@ const LeaderboardDemo = () => {
                                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
                                         {entry.rank}
                                     </div>
-                                    <ProfileCardTrigger username={entry.username} className="flex flex-1 items-center gap-4">
+                                    <DiscordProfileDialog username={entry.username} className="flex flex-1 items-center gap-4">
                                         <img
                                             src={entry.avatar || "/placeholder.svg"}
                                             alt={entry.username}
@@ -58,7 +58,7 @@ const LeaderboardDemo = () => {
                                             <div className="font-medium hover:text-primary">{entry.username}</div>
                                             <div className="text-sm text-muted-foreground">{entry.score} commits</div>
                                         </div>
-                                    </ProfileCardTrigger>
+                                    </DiscordProfileDialog>
                                     <Trophy className="h-5 w-5 text-secondary" />
                                 </motion.div>
                             ))}

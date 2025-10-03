@@ -30,7 +30,7 @@
     "@radix-ui/react-progress": "latest",
     "@radix-ui/react-select": "latest",
     "@radix-ui/react-separator": "^1.1.7",
-    "@radix-ui/react-slot": "^1.1.1",
+    "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "latest",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@types/express-session": "^1.18.2",
