@@ -82,7 +82,7 @@ export function LoginWithPermissions({ returnUrl = '/' }: LoginWithPermissionsPr
           <Button
             onClick={() => handleLogin(false, 'basic')}
             disabled={isLoading}
-            className="w-full"
+            className="w-full cursor-pointer"
             variant="default"
           >
             {isLoading && loadingType === 'basic' ? (

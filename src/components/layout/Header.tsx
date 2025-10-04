@@ -55,7 +55,7 @@ const Header = () => {
                         </Button>
 
                         {/* Authentication Section */}
-                        <AuthSection returnUrl={pathname} />
+                        <AuthSection />
                     </div>
                 </div>
             </div>
