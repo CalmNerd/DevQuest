@@ -1,4 +1,3 @@
-import { Github } from 'lucide-react'
 import { Button } from '../ui'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -35,9 +34,11 @@ const Header = () => {
                         </motion.div>
                         : <div>
                             {(!pathname.startsWith('/repositories')) &&
-                                <div className="flex items-center gap-2 pl-8">
-                                    <span className="text-xl font-bold text-foreground">DevQuest</span>
-                                </div>
+                                <Link href="/">
+                                    <div className="flex items-center gap-2 pl-8">
+                                        <span className="text-xl font-bold text-foreground">DevQuest</span>
+                                    </div>
+                                </Link>
                             }
                         </div>
                     }

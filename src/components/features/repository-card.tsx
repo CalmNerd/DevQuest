@@ -5,13 +5,8 @@ import { motion } from "framer-motion"
 import {
   Star,
   GitFork,
-  Eye,
   ExternalLink,
   Calendar,
-  Code,
-  Tag,
-  Users,
-  Shield,
   Archive,
   Lock,
   Globe,
@@ -24,8 +19,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { GitHubSearchRepo } from '@/types/github.types'
-import githubColors from "@/lib/github-colors.json"
-import Link from "next/link"
 import { formatMarkdownPreview, formatSize, getLanguageColor, getTimeAgo } from "@/lib/utils"
 
 interface RepositoryCardProps {

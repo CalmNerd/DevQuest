@@ -90,7 +90,7 @@ const Hero = () => {
                             transition={{ delay: 0.4 }}
                             className="rounded-lg bg-card/50 p-4 backdrop-blur-sm"
                         >
-                            <div className="text-2xl font-bold text-secondary">50+</div>
+                            <div className="text-2xl font-bold text-cyan-500">30+</div>
                             <div className="text-sm text-muted-foreground">Achievement Badges</div>
                         </motion.div>
                         <motion.div

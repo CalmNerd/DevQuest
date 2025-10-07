@@ -6,10 +6,8 @@ import { motion } from "framer-motion"
 import {
   Search,
   ExternalLink,
-  Tag,
   AlertCircle,
   CheckCircle,
-  GitBranch,
   Star,
   CircleDot,
   Bug,
@@ -319,12 +317,11 @@ export default function ExplorePage() {
                       variant={filters.label === label ? "default" : "outline"}
                       size="sm"
                       onClick={() => setFilters({ ...filters, label })}
-                      className={`gap-1 h-6 transition-all ${filters.label === label
-                        ? 'bg-primary text-primary-foreground shadow-md text-xs px-1 py-0'
+                      className={`gap-1 h-6 text-xs shadow-md px-1 py-0 transition-all hover:text-[#4493f8] text-[#4493f8] bg-[#4493f8]/10 transition-color ${filters.label === label
+                        ? 'bg-[#4493f8] hover:bg-[#4493f8] text-primary-foreground hover:text-primary-foreground'
                         : 'hover:bg-muted'
                         }`}
                     >
-                      <Tag className="size-3" />
                       {label}
                     </Button>
                   ))}
@@ -333,10 +330,19 @@ export default function ExplorePage() {
                   {popularLanguages.slice(0, 5).map((lang) => {
                     const isSelected = filters.languages.some(l => l.value === lang)
                     return (
-                      <Button
+                      <div
                         key={lang}
-                        variant={isSelected ? "default" : "outline"}
-                        size="sm"
+                        className={`inline-block border transform -skew-x-20 px-1 py-0 rounded cursor-pointer transition-all ${isSelected
+                          ? 'bg-primary text-primary-foreground shadow-md text-xs border-primary'
+                          : 'hover:bg-muted border-border'
+                        }`}
+                        style={{
+                          borderColor: getLanguageColor(lang),
+                          color: getLanguageColor(lang),
+                          backgroundColor: isSelected
+                            ? `${getLanguageColor(lang)}66`
+                            : undefined,
+                        }}
                         onClick={() => {
                           if (isSelected) {
                             setFilters({
@@ -350,14 +356,11 @@ export default function ExplorePage() {
                             })
                           }
                         }}
-                        className={`gap-2 h-6 transition-all ${isSelected
-                          ? 'bg-primary text-primary-foreground shadow-md text-xs px-1 py-0'
-                          : 'hover:bg-muted'
-                          }`}
                       >
-                        <GitBranch className="size-3" />
-                        {lang}
-                      </Button>
+                        <span className="block px-2 font-medium text-sm transform skew-x-20 whitespace-nowrap h-6 flex items-center">
+                          {lang}
+                        </span>
+                      </div>
                     )
                   })}
                 </div>
