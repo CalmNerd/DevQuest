@@ -4,6 +4,7 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { TrendingUp } from 'lucide-react'
 import TrendingPreview from '@/components/repositories/TrendingPreview'
+import GSoCOrganizationsPreview from '@/components/gsoc/GSoCOrganizationsPreview'
 
 
 export default function RepositoryHomePage() {
@@ -35,6 +36,15 @@ export default function RepositoryHomePage() {
             transition={{ delay: 0.1 }}
           >
             <TrendingPreview />
+          </motion.div>
+
+          {/* GSoC Organizations Preview */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            <GSoCOrganizationsPreview />
           </motion.div>
         </div>
       </div>

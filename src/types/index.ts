@@ -5,6 +5,8 @@ export * from './api.types'
 
 export * from './github.types'
 
+export * from './gsoc.types'
+
 export type {
   User,
   GithubStats,
@@ -20,3 +22,15 @@ export type {
   GitHubContribution,
   UserProfile,
 } from './github.types'
+
+export type {
+  GSoCOrganization,
+  GSoCProject,
+  GSoCYearData,
+  GSoCOrganizationSummary,
+  GSoCOrganizationDetails,
+  GSoCChartData,
+  GSoCListResponse,
+  GSoCOrganizationResponse,
+  GSoCYearResponse,
+} from './gsoc.types'
