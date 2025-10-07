@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Code, Users } from "lucide-react";
 import { GSoCDataService } from "@/services/external/gsoc-data.service";
 import type { GSoCOrganizationSummary } from "@/types";
