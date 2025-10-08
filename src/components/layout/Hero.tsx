@@ -41,7 +41,7 @@ const Hero = () => {
                         </div>
                     </h1>
                     <p className="mb-8 text-md text-muted-foreground/80 text-pretty max-w-xl mx-auto">
-                        Make <span className='font-bold text-muted-foreground p-1'>open-source</span> contributions, discover <span className='font-bold text-muted-foreground p-1 rounded-md'>bounty-paying</span> issue/repositories and <span className='font-bold text-muted-foreground p-1 rounded-md'>rank</span> among developers across <span className='font-bold text-muted-foreground p-1 rounded-md'>the globe.</span>
+                        Make <span className='font-bold text-muted-foreground'>open-source</span> contributions, discover <span className='font-bold text-muted-foreground'>bounty-paying</span> issue/repositories and <span className='font-bold text-muted-foreground'>rank</span> among developers across <span className='font-bold text-muted-foreground'>the globe.</span>
                     </p>
 
                     {/* Search Form */}

@@ -8,6 +8,7 @@ export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 export { Separator } from './separator'
 export { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs'
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip'
+export { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './sheet'
 export { default as MultiSelect } from './multi-select'
 export { HeroGrid } from './hero-grid'
 export { AccessLevelBadge, AccessLevelCard } from './access-level-badge'

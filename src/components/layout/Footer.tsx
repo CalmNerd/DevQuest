@@ -10,7 +10,10 @@ const Footer = () => {
                         {/* <div className="flex h-6 w-6 items-center justify-center rounded bg-primary">
                             <Github className="h-4 w-4 text-primary-foreground" />
                         </div> */}
-                        <span className="font-semibold">DevQuest</span>
+                        <div className="flex items-center font-bold text-2xl">
+                            <span className="text-blue-500">dev</span>
+                            <span className="bg-linear-to-r/longer from-blue-500 to-yellow-400 text-transparent bg-clip-text">quest</span>
+                        </div>
                     </div>
                     <div className="flex gap-6 text-sm text-muted-foreground">
                         {/* <Link href="/privacy" className="hover:text-foreground">

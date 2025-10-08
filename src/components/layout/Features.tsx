@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Card, CardContent } from '../ui'
-import { Trophy, Users, Star, GitBranch, Search, Database, Zap, Github } from "lucide-react"
+import { Trophy, Users, GitBranch, Search, Award, Code } from "lucide-react"
 
 const Features = () => {
 
@@ -9,11 +9,6 @@ const Features = () => {
             icon: Trophy,
             title: "Dynamic Leaderboards",
             description: "Compete on daily, weekly, monthly, and yearly contribution leaderboards with power levels and rankings",
-        },
-        {
-            icon: Star,
-            title: "Achievement Badges",
-            description: "Earn unique badges for milestones, streaks, and special accomplishments with rarity levels",
         },
         {
             icon: Users,
@@ -31,9 +26,14 @@ const Features = () => {
             description: "Discover and filter GitHub issues across repositories with advanced search capabilities",
         },
         {
-            icon: Database,
-            title: "Drizzle ORM Backend",
-            description: "Type-safe database operations with real-time analytics and background services",
+            icon: Code,
+            title: "GSoC Organizations",
+            description: "Browse Google Summer of Code participating organizations with detailed analytics and charts",
+        },
+        {
+            icon: Award,
+            title: "Trending Developers",
+            description: "Discover top developers with trending badges based on their contribution patterns and achievements",
         },
     ]
     return (

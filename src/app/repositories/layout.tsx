@@ -15,7 +15,7 @@ export default function RepositoryLayout({ children }: RepositoryLayoutProps) {
       <RepositorySidebar />
       <SidebarInset>
         <Header />
-        <main>
+        <main className="min-h-screen">
           {children}
         </main>
       </SidebarInset>

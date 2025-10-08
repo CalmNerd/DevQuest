@@ -38,7 +38,7 @@ interface SidebarNavItem {
 
 export default function RepositorySidebar() {
   const pathname = usePathname()
-  const { state } = useSidebar()
+  const { state, isMobile, setOpenMobile } = useSidebar()
 
   const navigationItems: SidebarNavItem[] = [
     {
@@ -67,11 +67,18 @@ export default function RepositorySidebar() {
     }
   ]
 
+  // Close mobile sidebar when navigation occurs
+  const handleNavClick = () => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-1 py-3">
-          <Link href="/" className='size-7'>
+          <Link href="/" className='size-7' onClick={handleNavClick}>
             <Github className="" />
           </Link>
           <AnimatePresence mode="wait">
@@ -83,12 +90,13 @@ export default function RepositorySidebar() {
                 exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.2, ease: "easeInOut" }}
                 className="w-full font-semibold flex items-center justify-between gap-2">
-                <Link href="/">
+                <Link href="/" onClick={handleNavClick}>
                   <motion.span>
                     DevQuest
                   </motion.span>
                 </Link>
-                <SidebarTrigger />
+                {/* Show trigger on desktop, hide on mobile (Sheet has built-in close) */}
+                {!isMobile && <SidebarTrigger />}
               </motion.div>
 
             )}
@@ -110,7 +118,7 @@ export default function RepositorySidebar() {
                       isActive={isActive}
                       tooltip={item.title}
                     >
-                      <Link href={item.href}>
+                      <Link href={item.href} onClick={handleNavClick}>
                         {item.icon}
                         <AnimatePresence mode="wait">
                           {state === "expanded" && (
@@ -157,7 +165,7 @@ export default function RepositorySidebar() {
                   asChild
                   tooltip="Most Starred"
                 >
-                  <Link href="/repositories?q=stars:>1000">
+                  <Link href="/repositories?q=stars:>1000" onClick={handleNavClick}>
                     <Star className="h-4 w-4" />
                     <AnimatePresence mode="wait">
                       {state === "expanded" && (
@@ -181,7 +189,7 @@ export default function RepositorySidebar() {
                   asChild
                   tooltip="Most Forked"
                 >
-                  <Link href="/repositories?q=forks:>100">
+                  <Link href="/repositories?q=forks:>100" onClick={handleNavClick}>
                     <GitFork className="h-4 w-4" />
                     <AnimatePresence mode="wait">
                       {state === "expanded" && (
@@ -205,7 +213,7 @@ export default function RepositorySidebar() {
                   asChild
                   tooltip="By Language"
                 >
-                  <Link href="/repositories?q=language:javascript">
+                  <Link href="/repositories?q=language:javascript" onClick={handleNavClick}>
                     <Code className="h-4 w-4" />
                     <AnimatePresence mode="wait">
                       {state === "expanded" && (
