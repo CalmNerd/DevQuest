@@ -69,7 +69,6 @@ export const githubStats = pgTable("github_stats", {
 
   // New fields for comprehensive achievements
   totalCommits: integer("total_commits").default(0),
-  meaningfulCommits: integer("meaningful_commits").default(0), // additions > deletions
   totalPullRequests: integer("total_pull_requests").default(0),
   mergedPullRequests: integer("merged_pull_requests").default(0),
   totalIssues: integer("total_issues").default(0),

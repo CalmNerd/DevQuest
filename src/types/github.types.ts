@@ -291,7 +291,6 @@ export interface ProfileData {
   mergedPullRequests: number
   closedIssues: number
   totalReviews: number
-  meaningfulCommits: number
   contributedTo: number
   externalContributors: number
   reposWithStars: number
@@ -410,7 +409,6 @@ export interface GitHubStatsData {
   languageStats: Record<string, number>
   contributionGraph: any
   totalCommits: number
-  meaningfulCommits: number
   totalPullRequests: number
   mergedPullRequests: number
   totalIssues: number

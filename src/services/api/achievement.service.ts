@@ -16,7 +16,6 @@ export interface AchievementCriteria {
   // Basic metrics
   totalContributions?: number
   totalCommits?: number
-  meaningfulCommits?: number
   totalStars?: number
   totalForks?: number
   totalRepositories?: number
@@ -378,7 +377,6 @@ export class AchievementService {
     const statsMap: Record<string, keyof GithubStats> = {
       totalContributions: 'overallContributions',
       totalCommits: 'totalCommits',
-      meaningfulCommits: 'meaningfulCommits',
       totalStars: 'totalStars',
       totalForks: 'totalForks',
       totalRepositories: 'totalRepositories',
@@ -436,7 +434,6 @@ export class AchievementService {
     const primaryMetrics: Record<string, string> = {
       contributions: 'totalContributions',
       commits: 'totalCommits',
-      meaningful_commits: 'meaningfulCommits',
       stars: 'totalStars',
       forks: 'totalForks',
       repositories: 'totalRepositories',

@@ -198,7 +198,6 @@ class BackgroundUpdateService {
             languageStats: {},
             contributionGraph: { weeks: [], totalContributions: 0 },
             totalCommits: 0,
-            meaningfulCommits: 0,
             totalPullRequests: 0,
             mergedPullRequests: 0,
             totalIssues: 0,

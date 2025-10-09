@@ -666,10 +666,6 @@ export default function ProfilePage() {
                       <span className="font-semibold text-foreground">{profile.totalReviews.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Meaningful Commits</span>
-                      <span className="font-semibold text-foreground">{profile.meaningfulCommits.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
                       <span className="text-muted-foreground">Following</span>
                       <span className="font-semibold text-foreground">{profile.following.toLocaleString()}</span>
                     </div>

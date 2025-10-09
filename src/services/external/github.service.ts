@@ -372,7 +372,6 @@ class GitHubService {
 
       // Use existing comprehensive data (this is the key fix!)
       const totalCommits = existingStats.totalCommits || 0
-      const meaningfulCommits = existingStats.meaningfulCommits || 0
       const totalPullRequests = existingStats.totalPullRequests || 0
       const mergedPullRequests = existingStats.mergedPullRequests || 0
       const totalIssues = existingStats.totalIssues || 0
@@ -420,7 +419,6 @@ class GitHubService {
         mergedPullRequests * 10 +
         closedIssues * 5 +
         totalReviews * 3 +
-        meaningfulCommits * 2 +
         recentActivityScore * 2 // Bonus for recent activity
       )
 
@@ -447,7 +445,6 @@ class GitHubService {
         languageStats,
         contributionGraph,
         totalCommits,
-        meaningfulCommits,
         totalPullRequests,
         mergedPullRequests,
         totalIssues,
@@ -539,7 +536,6 @@ class GitHubService {
 
     // Use the simplified commit stats
     const totalCommits = commitStats.totalCommits || 0
-    const meaningfulCommits = Math.floor(totalCommits * 0.7) // Estimate meaningful commits
 
     // Process PR statistics
     const totalPullRequests = user.pullRequests.totalCount
@@ -666,8 +662,7 @@ class GitHubService {
       totalRepositories * 3 +
       mergedPullRequests * 10 +
       closedIssues * 5 +
-      totalReviews * 3 +
-      meaningfulCommits * 2
+      totalReviews * 3
 
     return {
       dailyContributions,
@@ -690,7 +685,6 @@ class GitHubService {
       languageStats,
       contributionGraph: calendar,
       totalCommits,
-      meaningfulCommits,
       totalPullRequests,
       mergedPullRequests,
       totalIssues,

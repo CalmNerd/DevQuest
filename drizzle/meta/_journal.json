@@ -71,6 +71,13 @@
       "when": 1727827400000,
       "tag": "0009_add_trending_ranks",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1760010519460,
+      "tag": "0010_remove_meaningful_commits",
+      "breakpoints": true
     }
   ]
 }

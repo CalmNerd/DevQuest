@@ -88,7 +88,6 @@ export async function GET() {
         languageStats: { JavaScript: 8, TypeScript: 4 },
         contributionGraph: { weeks: [], totalContributions: 3000 },
         totalCommits: 1500,
-        meaningfulCommits: 1200,
         totalPullRequests: 30,
         mergedPullRequests: 25,
         totalIssues: 20,

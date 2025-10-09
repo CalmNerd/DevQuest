@@ -115,7 +115,6 @@ export async function GET(request: NextRequest, { params }: { params: { username
             mergedPullRequests: githubStats.mergedPullRequests || 0,
             closedIssues: githubStats.closedIssues || 0,
             totalReviews: githubStats.totalReviews || 0,
-            meaningfulCommits: githubStats.meaningfulCommits || 0,
             contributedTo: githubStats.contributedTo || 0,
             externalContributors: githubStats.externalContributors || 0,
             reposWithStars: githubStats.reposWithStars || 0,
