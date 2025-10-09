@@ -206,34 +206,40 @@ export default function ProfilePage() {
       <div className="container mx-auto px-4 py-8">
         {/* Profile Header */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <Card className="relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
+          <Card className="relative overflow-hidden bg-card/80 backdrop-blur-sm border-border/50">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
             <CardContent className="relative p-8">
               <div className="flex flex-col gap-6 md:flex-row md:items-start">
-                <Avatar className="h-32 w-32 border-4 border-primary/20">
+                <Avatar className="h-32 w-32 border-4 border-primary/30 shadow-lg">
                   <AvatarImage src={profile.avatar_url || "/placeholder.svg"} alt={profile.login} />
-                  <AvatarFallback className="text-2xl">
+                  <AvatarFallback className="text-2xl bg-primary/10">
                     {profile.login && profile.login.length > 0 ? profile.login[0].toUpperCase() : 'U'}
                   </AvatarFallback>
                 </Avatar>
 
                 <div className="flex-1">
-                  <div className="mb-4">
-                    <h1 className="mb-2 text-3xl font-bold">{profile.name || profile.login}</h1>
+                  <div className="mb-6">
+                    <h1 className="mb-2 text-3xl font-bold text-foreground">{profile.name || profile.login}</h1>
                     <p className="text-lg text-muted-foreground">@{profile.login}</p>
-                    {profile.bio && <p className="mt-2 text-muted-foreground">{profile.bio}</p>}
+                    {profile.bio && <p className="mt-3 text-muted-foreground leading-relaxed">{profile.bio}</p>}
                   </div>
 
-                  <div className="mb-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Trophy className="h-5 w-5 text-yellow-500" />
-                      <span className="font-semibold">Power Level {profile.powerLevel}</span>
-                      <Badge variant="secondary">{profile.points.toLocaleString()} points</Badge>
+                  <div className="mb-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20">
+                        <Trophy className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <span className="font-semibold text-lg">Power Level {profile.powerLevel}</span>
+                        <Badge variant="secondary" className="ml-2 bg-primary/10 text-primary border-primary/30">
+                          {profile.points.toLocaleString()} points
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       <div className="flex justify-between text-sm text-muted-foreground">
                         <span>Progress to Level {profile.powerLevel + 1}</span>
-                        <span>
+                        <span className="font-medium">
                           {profile.pointsToNext.toLocaleString()} / {profile.nextLevelCost.toLocaleString()}
                         </span>
                       </div>
@@ -243,16 +249,18 @@ export default function ProfilePage() {
 
                   {/* GitHub Native Achievements Preview */}
                   {profile.githubNativeAchievements && profile.githubNativeAchievements.length > 0 && (
-                    <div className="mb-4">
-                      <p className="mb-2 text-sm font-medium text-muted-foreground flex items-center gap-1">
-                        <Github className="h-3 w-3" />
+                    <div className="mb-6">
+                      <p className="mb-3 text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20">
+                          <Github className="h-3 w-3 text-primary" />
+                        </div>
                         GitHub Achievements
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {profile.githubNativeAchievements.slice(0, 4).map((achievement) => (
                           <div
                             key={achievement.slug}
-                            className="flex items-center gap-2 rounded-lg border-2 border-primary/30 bg-primary/5 px-3 py-2 text-xs hover:border-primary/50 transition-colors"
+                            className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-xs hover:border-primary/50 hover:bg-primary/10 transition-all duration-200"
                             title={achievement.description || achievement.name}
                           >
                             <img
@@ -263,16 +271,16 @@ export default function ProfilePage() {
                                 (e.target as HTMLImageElement).style.display = 'none'
                               }}
                             />
-                            <span className="font-medium">{achievement.name}</span>
+                            <span className="font-medium text-foreground">{achievement.name}</span>
                             {achievement.tier && (
-                              <span className="text-muted-foreground text-[10px]">
+                              <span className="text-muted-foreground text-[10px] bg-muted/30 px-1.5 py-0.5 rounded-full">
                                 {achievement.tier}
                               </span>
                             )}
                           </div>
                         ))}
                         {profile.githubNativeAchievements.length > 4 && (
-                          <div className="flex items-center rounded-lg border-2 border-dashed border-muted px-3 py-2 text-xs text-muted-foreground">
+                          <div className="flex items-center rounded-xl border border-dashed border-muted px-3 py-2 text-xs text-muted-foreground bg-muted/20">
                             +{profile.githubNativeAchievements.length - 4} more
                           </div>
                         )}
@@ -282,9 +290,11 @@ export default function ProfilePage() {
 
                   {/* Trending Developer Badges */}
                   {profile.trendingDeveloperBadges && profile.trendingDeveloperBadges.length > 0 && (
-                    <div className="mb-4">
-                      <p className="mb-2 text-sm font-medium text-muted-foreground flex items-center gap-1">
-                        <Flame className="h-3 w-3" />
+                    <div className="mb-6">
+                      <p className="mb-3 text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500/20">
+                          <Flame className="h-3 w-3 text-orange-500" />
+                        </div>
                         Trending Developer
                       </p>
                       <div className="flex flex-wrap gap-2">
@@ -293,9 +303,9 @@ export default function ProfilePage() {
                           return (
                             <div
                               key={badge.timePeriod}
-                              className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2 text-xs transition-colors ${badge.isCurrent
-                                ? 'border-orange-500/50 bg-orange-500/10 hover:border-orange-500 text-orange-600 dark:text-orange-400'
-                                : 'border-muted bg-muted/30 text-muted-foreground'
+                              className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition-all duration-200 ${badge.isCurrent
+                                ? 'border-orange-500/50 bg-orange-500/10 hover:border-orange-500 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400'
+                                : 'border-muted bg-muted/30 text-muted-foreground hover:bg-muted/50'
                                 }`}
                               title={`${badge.isCurrent ? 'Currently' : 'Was'} trending ${badge.timePeriod}${displayRank ? ` at rank #${displayRank}` : ''}${badge.language ? ` in ${badge.language}` : ''}`}
                             >
@@ -323,8 +333,13 @@ export default function ProfilePage() {
 
                   {/* Custom Achievements Preview */}
                   {profile.achievementProgress && profile.achievementProgress.length > 0 && (
-                    <div className="mb-4">
-                      <p className="mb-2 text-sm font-medium text-muted-foreground">Top Custom Achievements</p>
+                    <div className="mb-6">
+                      <p className="mb-3 text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/20">
+                          <Award className="h-3 w-3 text-accent" />
+                        </div>
+                        Top Custom Achievements
+                      </p>
                       <div className="flex flex-wrap gap-2">
                         {profile.achievementProgress
                           .filter(achievement => achievement.isUnlocked)
@@ -344,12 +359,12 @@ export default function ProfilePage() {
                             return (
                               <div
                                 key={achievement.achievement.id}
-                                className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2 text-xs ${rarityColor}`}
+                                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition-all duration-200 hover:scale-105 ${rarityColor}`}
                                 title={`${achievement.achievement.name} - ${achievement.achievement.description}`}
                               >
                                 <IconComponent className="h-4 w-4" />
                                 <span className="font-medium">{achievement.achievement.name}</span>
-                                <span className="text-muted-foreground">
+                                <span className="text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded-full text-[10px]">
                                   {(achievement as any).isLeveled && (achievement as any).currentLevel !== undefined
                                     ? `Lv.${(achievement as any).currentLevel}`
                                     : ''}
@@ -361,34 +376,40 @@ export default function ProfilePage() {
                     </div>
                   )}
 
-                  <div className="mb-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  <div className="mb-6 flex flex-wrap gap-4 text-sm text-muted-foreground">
                     {profile.location && (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-4 w-4 items-center justify-center rounded-full bg-muted/30">
+                          <MapPin className="h-3 w-3" />
+                        </div>
                         {profile.location}
                       </div>
                     )}
                     {profile.blog && (
-                      <div className="flex items-center gap-1">
-                        <LinkIcon className="h-4 w-4" />
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-4 w-4 items-center justify-center rounded-full bg-muted/30">
+                          <LinkIcon className="h-3 w-3" />
+                        </div>
                         <a
                           href={profile.blog.startsWith("http") ? profile.blog : `https://${profile.blog}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="hover:text-primary"
+                          className="hover:text-primary transition-colors"
                         >
                           {profile.blog}
                         </a>
                       </div>
                     )}
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-muted/30">
+                        <Calendar className="h-3 w-3" />
+                      </div>
                       Joined {formatProfileDate(profile.created_at)}
                     </div>
                   </div>
 
-                  <div className="flex gap-4">
-                    <Button asChild>
+                  <div className="flex gap-3">
+                    <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
                       <a
                         href={`https://github.com/${profile.login}`}
                         target="_blank"
@@ -400,7 +421,7 @@ export default function ProfilePage() {
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     </Button>
-                    <Button variant="outline">Follow</Button>
+                    <Button variant="outline" className="border-border/50 hover:bg-muted/50">Follow</Button>
                   </div>
                 </div>
               </div>
@@ -415,56 +436,56 @@ export default function ProfilePage() {
           transition={{ delay: 0.1 }}
           className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4"
         >
-          <Card className="group transition-all hover:scale-105">
+          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
                   <Star className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{profile.totalStars.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-foreground">{profile.totalStars.toLocaleString()}</div>
                   <div className="text-sm text-muted-foreground">Total Stars</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="group transition-all hover:scale-105">
+          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 group-hover:bg-accent/30 transition-colors">
                   <Users className="h-6 w-6 text-accent" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{profile.followers.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-foreground">{profile.followers.toLocaleString()}</div>
                   <div className="text-sm text-muted-foreground">Followers</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="group transition-all hover:scale-105">
+          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary/10 group-hover:bg-secondary/20">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary/20 group-hover:bg-secondary/30 transition-colors">
                   <BookOpen className="h-6 w-6 text-secondary" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{profile.public_repos.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-foreground">{profile.public_repos.toLocaleString()}</div>
                   <div className="text-sm text-muted-foreground">Public Repos</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="group transition-all hover:scale-105">
+          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-chart-1/10 group-hover:bg-chart-1/20">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-chart-1/20 group-hover:bg-chart-1/30 transition-colors">
                   <TrendingUp className="h-6 w-6 text-chart-1" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{profile.totalCommits.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-foreground">{profile.totalCommits.toLocaleString()}</div>
                   <div className="text-sm text-muted-foreground">Total Commits</div>
                 </div>
               </div>
@@ -479,56 +500,56 @@ export default function ProfilePage() {
           transition={{ delay: 0.15 }}
           className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4"
         >
-          <Card className="group transition-all hover:scale-105">
+          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/10 group-hover:bg-green-500/20">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/20 group-hover:bg-green-500/30 transition-colors">
                   <GitFork className="h-6 w-6 text-green-500" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{profile.totalForks.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-foreground">{profile.totalForks.toLocaleString()}</div>
                   <div className="text-sm text-muted-foreground">Total Forks</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="group transition-all hover:scale-105">
+          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors">
                   <Users className="h-6 w-6 text-blue-500" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{profile.totalWatchers.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-foreground">{profile.totalWatchers.toLocaleString()}</div>
                   <div className="text-sm text-muted-foreground">Total Watchers</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="group transition-all hover:scale-105">
+          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-500/10 group-hover:bg-purple-500/20">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-500/20 group-hover:bg-purple-500/30 transition-colors">
                   <TrendingUp className="h-6 w-6 text-purple-500" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{profile.totalPRs.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-foreground">{profile.totalPRs.toLocaleString()}</div>
                   <div className="text-sm text-muted-foreground">Pull Requests</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="group transition-all hover:scale-105">
+          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-500/10 group-hover:bg-orange-500/20">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500/20 group-hover:bg-orange-500/30 transition-colors">
                   <BookOpen className="h-6 w-6 text-orange-500" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{profile.totalIssues.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-foreground">{profile.totalIssues.toLocaleString()}</div>
                   <div className="text-sm text-muted-foreground">Issues</div>
                 </div>
               </div>
@@ -539,20 +560,20 @@ export default function ProfilePage() {
         {/* Main Content */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="repositories">Repositories</TabsTrigger>
-              <TabsTrigger value="insights">Insights</TabsTrigger>
-              <TabsTrigger value="achievements">Achievements</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5 bg-card/80 backdrop-blur-sm border-border/50">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Overview</TabsTrigger>
+              <TabsTrigger value="repositories" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Repositories</TabsTrigger>
+              <TabsTrigger value="insights" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Insights</TabsTrigger>
+              <TabsTrigger value="achievements" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Achievements</TabsTrigger>
+              <TabsTrigger value="activity" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Activity</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
               <div className="grid gap-6 lg:grid-cols-2">
                 {/* Languages */}
-                <Card>
+                <Card className="bg-card/80 backdrop-blur-sm border-border/50">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <div className="h-2 w-2 rounded-full bg-primary" />
                       Top Languages
                     </CardTitle>
@@ -563,94 +584,94 @@ export default function ProfilePage() {
                       return (
                         <div key={language} className="space-y-2">
                           <div className="flex justify-between text-sm">
-                            <span>{language}</span>
+                            <span className="text-foreground">{language}</span>
                             <span className="text-muted-foreground">{count} repos</span>
                           </div>
-                          <Progress value={percentage} className="h-2" />
+                          <Progress value={percentage} className="h-2 bg-muted/30" />
                         </div>
                       )
                     })}
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="bg-card/80 backdrop-blur-sm border-border/50">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <div className="h-2 w-2 rounded-full bg-accent" />
                       Contribution Stats
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex justify-between">
-                      <span>Current Streak</span>
-                      <span className="font-semibold">{profile.contributionStreak} days</span>
+                      <span className="text-muted-foreground">Current Streak</span>
+                      <span className="font-semibold text-foreground">{profile.contributionStreak} days</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Longest Streak</span>
-                      <span className="font-semibold">{profile.longestStreak} days</span>
+                      <span className="text-muted-foreground">Longest Streak</span>
+                      <span className="font-semibold text-foreground">{profile.longestStreak} days</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Total Contributions</span>
-                      <span className="font-semibold">{profile.totalContributions.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Total Contributions</span>
+                      <span className="font-semibold text-foreground">{profile.totalContributions.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>This Year</span>
-                      <span className="font-semibold">{profile.thisYearContributions.toLocaleString()}</span>
+                      <span className="text-muted-foreground">This Year</span>
+                      <span className="font-semibold text-foreground">{profile.thisYearContributions.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Last 365 Days</span>
-                      <span className="font-semibold">{profile.last365Contributions.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Last 365 Days</span>
+                      <span className="font-semibold text-foreground">{profile.last365Contributions.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>This Month</span>
-                      <span className="font-semibold">{profile.monthlyContributions.toLocaleString()}</span>
+                      <span className="text-muted-foreground">This Month</span>
+                      <span className="font-semibold text-foreground">{profile.monthlyContributions.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>This Week</span>
-                      <span className="font-semibold">{profile.weeklyContributions.toLocaleString()}</span>
+                      <span className="text-muted-foreground">This Week</span>
+                      <span className="font-semibold text-foreground">{profile.weeklyContributions.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Today</span>
-                      <span className="font-semibold">{profile.dailyContributions.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Today</span>
+                      <span className="font-semibold text-foreground">{profile.dailyContributions.toLocaleString()}</span>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="bg-card/80 backdrop-blur-sm border-border/50">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <div className="h-2 w-2 rounded-full bg-green-500" />
                       Activity Breakdown
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex justify-between">
-                      <span>Total PRs</span>
-                      <span className="font-semibold">{profile.totalPRs.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Total PRs</span>
+                      <span className="font-semibold text-foreground">{profile.totalPRs.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Merged PRs</span>
-                      <span className="font-semibold">{profile.mergedPullRequests.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Merged PRs</span>
+                      <span className="font-semibold text-foreground">{profile.mergedPullRequests.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Total Issues</span>
-                      <span className="font-semibold">{profile.totalIssues.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Total Issues</span>
+                      <span className="font-semibold text-foreground">{profile.totalIssues.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Closed Issues</span>
-                      <span className="font-semibold">{profile.closedIssues.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Closed Issues</span>
+                      <span className="font-semibold text-foreground">{profile.closedIssues.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Code Reviews</span>
-                      <span className="font-semibold">{profile.totalReviews.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Code Reviews</span>
+                      <span className="font-semibold text-foreground">{profile.totalReviews.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Meaningful Commits</span>
-                      <span className="font-semibold">{profile.meaningfulCommits.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Meaningful Commits</span>
+                      <span className="font-semibold text-foreground">{profile.meaningfulCommits.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Following</span>
-                      <span className="font-semibold">{profile.following.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Following</span>
+                      <span className="font-semibold text-foreground">{profile.following.toLocaleString()}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -666,35 +687,35 @@ export default function ProfilePage() {
               <div className="grid gap-4">
                 {profile.repos && profile.repos.length > 0 ? (
                   profile.repos.slice(0, 10).map((repo) => (
-                    <Card key={repo.id} className="transition-all hover:shadow-md">
+                    <Card key={repo.id} className="transition-all hover:shadow-lg hover:scale-[1.02] bg-card/80 backdrop-blur-sm border-border/50">
                       <CardContent className="p-6">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h3 className="mb-2 font-semibold">
+                            <h3 className="mb-2 font-semibold text-foreground">
                               <a
                                 href={repo.html_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="hover:text-primary"
+                                className="hover:text-primary transition-colors"
                               >
                                 {repo.name}
                               </a>
                             </h3>
-                            {repo.description && <p className="mb-3 text-sm text-muted-foreground">{repo.description}</p>}
+                            {repo.description && <p className="mb-3 text-sm text-muted-foreground leading-relaxed">{repo.description}</p>}
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                               {repo.language && (
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-2">
                                   <div className="h-2 w-2 rounded-full bg-primary" />
-                                  {repo.language}
+                                  <span className="text-foreground">{repo.language}</span>
                                 </div>
                               )}
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-2">
                                 <Star className="h-3 w-3" />
-                                {repo.stargazers_count}
+                                <span className="text-foreground">{repo.stargazers_count}</span>
                               </div>
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-2">
                                 <GitFork className="h-3 w-3" />
-                                {repo.forks_count}
+                                <span className="text-foreground">{repo.forks_count}</span>
                               </div>
                             </div>
                           </div>
@@ -703,10 +724,10 @@ export default function ProfilePage() {
                     </Card>
                   ))
                 ) : (
-                  <Card>
+                  <Card className="bg-card/80 backdrop-blur-sm border-border/50">
                     <CardContent className="p-6 text-center">
                       <BookOpen className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                      <h3 className="mb-2 text-lg font-semibold">No Repositories Found</h3>
+                      <h3 className="mb-2 text-lg font-semibold text-foreground">No Repositories Found</h3>
                       <p className="text-muted-foreground">This user doesn't have any public repositories yet.</p>
                     </CardContent>
                   </Card>
@@ -717,53 +738,53 @@ export default function ProfilePage() {
             <TabsContent value="insights" className="space-y-6">
               <div className="grid gap-6 lg:grid-cols-2">
                 {/* Repository Insights */}
-                <Card>
+                <Card className="bg-card/80 backdrop-blur-sm border-border/50">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <div className="h-2 w-2 rounded-full bg-blue-500" />
                       Repository Insights
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex justify-between">
-                      <span>Repos with Stars</span>
-                      <span className="font-semibold">{profile.reposWithStars.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Repos with Stars</span>
+                      <span className="font-semibold text-foreground">{profile.reposWithStars.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Repos with Forks</span>
-                      <span className="font-semibold">{profile.reposWithForks.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Repos with Forks</span>
+                      <span className="font-semibold text-foreground">{profile.reposWithForks.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Contributed To</span>
-                      <span className="font-semibold">{profile.contributedTo.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Contributed To</span>
+                      <span className="font-semibold text-foreground">{profile.contributedTo.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>External Contributors</span>
-                      <span className="font-semibold">{profile.externalContributors.toLocaleString()}</span>
+                      <span className="text-muted-foreground">External Contributors</span>
+                      <span className="font-semibold text-foreground">{profile.externalContributors.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Dependency Usage</span>
-                      <span className="font-semibold">{profile.dependencyUsage.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Dependency Usage</span>
+                      <span className="font-semibold text-foreground">{profile.dependencyUsage.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Language Count</span>
-                      <span className="font-semibold">{profile.languageCount.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Language Count</span>
+                      <span className="font-semibold text-foreground">{profile.languageCount.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Top Language %</span>
-                      <span className="font-semibold">{profile.topLanguagePercentage.toLocaleString()}%</span>
+                      <span className="text-muted-foreground">Top Language %</span>
+                      <span className="font-semibold text-foreground">{profile.topLanguagePercentage.toLocaleString()}%</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Rare Language Repos</span>
-                      <span className="font-semibold">{profile.rareLanguageRepos.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Rare Language Repos</span>
+                      <span className="font-semibold text-foreground">{profile.rareLanguageRepos.toLocaleString()}</span>
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Language Distribution */}
-                <Card>
+                <Card className="bg-card/80 backdrop-blur-sm border-border/50">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <div className="h-2 w-2 rounded-full bg-purple-500" />
                       Language Distribution
                     </CardTitle>
@@ -774,10 +795,10 @@ export default function ProfilePage() {
                       return (
                         <div key={language} className="space-y-2">
                           <div className="flex justify-between text-sm">
-                            <span>{language}</span>
+                            <span className="text-foreground">{language}</span>
                             <span className="text-muted-foreground">{count} repos ({percentage.toFixed(1)}%)</span>
                           </div>
-                          <Progress value={percentage} className="h-2" />
+                          <Progress value={percentage} className="h-2 bg-muted/30" />
                         </div>
                       )
                     })}
@@ -794,12 +815,12 @@ export default function ProfilePage() {
             <TabsContent value="achievements" className="space-y-6">
               {/* Trending Developer Badges Section */}
               {profile.trendingDeveloperBadges && profile.trendingDeveloperBadges.length > 0 && (
-                <Card>
+                <Card className="bg-card/80 backdrop-blur-sm border-border/50">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <Flame className="h-5 w-5 text-orange-500" />
                       Trending Developer Badges
-                      <Badge variant="secondary" className="ml-2">
+                      <Badge variant="secondary" className="ml-2 bg-orange-500/10 text-orange-500 border-orange-500/30">
                         {profile.trendingDeveloperBadges.length}
                       </Badge>
                     </CardTitle>
@@ -921,12 +942,12 @@ export default function ProfilePage() {
 
               {/* GitHub Native Achievements Section */}
               {profile.githubNativeAchievements && profile.githubNativeAchievements.length > 0 && (
-                <Card>
+                <Card className="bg-card/80 backdrop-blur-sm border-border/50">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <Github className="h-5 w-5 text-primary" />
                       GitHub Native Achievements
-                      <Badge variant="secondary" className="ml-2">
+                      <Badge variant="secondary" className="ml-2 bg-primary/10 text-primary border-primary/30">
                         {profile.githubNativeAchievements.length}
                       </Badge>
                     </CardTitle>
@@ -998,14 +1019,14 @@ export default function ProfilePage() {
             </TabsContent>
 
             <TabsContent value="activity" className="space-y-6">
-              <Card>
+              <Card className="bg-card/80 backdrop-blur-sm border-border/50">
                 <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
+                  <CardTitle className="text-foreground">Recent Activity</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center py-8 text-muted-foreground">
                     <Calendar className="mx-auto mb-4 h-12 w-12" />
-                    <p>Activity timeline coming soon!</p>
+                    <p className="text-foreground">Activity timeline coming soon!</p>
                     <p className="text-sm">We're working on bringing you detailed contribution insights.</p>
                   </div>
                 </CardContent>
