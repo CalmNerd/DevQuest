@@ -132,7 +132,7 @@ export default function ProfilePage() {
   if (loading || !dataReady || !profile) {
     return (
       <div className="relative min-h-screen bg-background">
-        <div className="absolute inset-0  bg-radial from-background from-40% to-orange-500 to-90% opacity-30" />
+        <div className="absolute inset-0 bg-radial from-background from-40% to-violet-500 to-90% opacity-10" />
         <div className="container mx-auto h-screen flex items-center justify-center">
             <Loader className="w-full" />
         </div>

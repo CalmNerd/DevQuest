@@ -194,11 +194,11 @@ class GitHubService {
     try {
       // Use the existing fetchUserRepositories method which works correctly
       const repositories = await this.fetchUserRepositories(username, 1, 100)
-      
+
       // If you need additional details for each repo, fetch them individually
       // But be careful about rate limits
       const detailedRepos = []
-      
+
       for (const repo of repositories.slice(0, 20)) { // Limit to prevent rate limiting
         try {
           const repoDetail = await this.fetchRepositoryDetails(`${username}/${repo.name}`)
@@ -209,7 +209,7 @@ class GitHubService {
           detailedRepos.push(repo)
         }
       }
-      
+
       return detailedRepos
     } catch (error) {
       console.error("Error fetching repository details:", error)
@@ -249,7 +249,7 @@ class GitHubService {
       `
 
       const data = await this.makeGraphQLRequest(query, { username })
-      
+
       if (!data.user) {
         return { totalCommits: 0, repositories: [] }
       }
@@ -257,7 +257,7 @@ class GitHubService {
       // Calculate total commits across all repositories
       let totalCommits = 0
       const repositories = data.user.repositories.nodes || []
-      
+
       repositories.forEach((repo: any) => {
         if (repo.defaultBranchRef?.target?.history?.totalCount) {
           totalCommits += repo.defaultBranchRef.target.history.totalCount
@@ -284,7 +284,7 @@ class GitHubService {
     // Use GraphQL only - no REST fallback to prevent data corruption
     return await this.fetchUserStatsWithGraphQL(username)
   }
-  
+
   async fetchUserStatsIncremental(username: string, lastFetchTime?: Date, isIncremental: boolean = false) {
     // Use GraphQL only - no REST fallback to prevent data corruption
     if (isIncremental && lastFetchTime) {
@@ -296,11 +296,11 @@ class GitHubService {
     }
   }
 
-  
-    // Incremental GraphQL fetch - attempts to fetch only new data since last fetch
-    // Note: GitHub GraphQL API doesn't support direct since for contributions,
-    // so we'll use a hybrid approach with events API for recent activity
-   
+
+  // Incremental GraphQL fetch - attempts to fetch only new data since last fetch
+  // Note: GitHub GraphQL API doesn't support direct since for contributions,
+  // so we'll use a hybrid approach with events API for recent activity
+
   private async fetchUserStatsIncrementalWithGraphQL(username: string, lastFetchTime: Date) {
     try {
       // For incremental fetching, we'll:
@@ -309,28 +309,28 @@ class GitHubService {
       // 3. Merge existing + new data for complete results
 
       const sinceTime = lastFetchTime.toISOString()
-      
+
       console.log(`Incremental fetch: Getting existing data and recent events since ${sinceTime}`)
-      
+
       // Get existing complete data from database first
       const existingUser = await storage.getUserByUsername(username)
       if (!existingUser) {
         throw new Error("User not found in database")
       }
-      
+
       const existingStats = await storage.getGithubStats(existingUser.id)
       if (!existingStats) {
         throw new Error("No existing stats found for user")
       }
-      
+
       console.log(`Incremental fetch: Found existing stats, fetching new data since ${sinceTime}`)
-      
+
       // Fetch recent events for activity tracking (this is the main incremental part)
       const recentEvents = await this.fetchUserEventsSince(username, sinceTime, 1, 100)
-      
+
       // Get current user data to check for changes
       const currentUserData = await this.fetchUserData(username)
-      
+
       if (!currentUserData) {
         throw new Error("User not found or data unavailable")
       }
@@ -341,7 +341,7 @@ class GitHubService {
       const followers = currentUserData.followers || existingStats.followers || 0
       const following = currentUserData.following || existingStats.following || 0
       const totalRepositories = currentUserData.public_repos || existingStats.totalRepositories || 0
-      
+
       // For incremental fetch, we'll use existing comprehensive data and add recent activity
       const totalStars = existingStats.totalStars || 0
       const totalForks = existingStats.totalForks || 0
@@ -349,8 +349,8 @@ class GitHubService {
       let languageStats = {}
       try {
         if (existingStats.languageStats) {
-          languageStats = typeof existingStats.languageStats === 'string' 
-            ? JSON.parse(existingStats.languageStats) 
+          languageStats = typeof existingStats.languageStats === 'string'
+            ? JSON.parse(existingStats.languageStats)
             : existingStats.languageStats
         }
       } catch (error) {
@@ -398,8 +398,8 @@ class GitHubService {
       let contributionGraph = { weeks: [], totalContributions: 0 }
       try {
         if (existingStats.contributionGraph) {
-          contributionGraph = typeof existingStats.contributionGraph === 'string' 
-            ? JSON.parse(existingStats.contributionGraph) 
+          contributionGraph = typeof existingStats.contributionGraph === 'string'
+            ? JSON.parse(existingStats.contributionGraph)
             : existingStats.contributionGraph
         }
       } catch (error) {
@@ -412,14 +412,15 @@ class GitHubService {
 
       // Calculate points based on existing data + recent activity bonus
       const points = Math.floor(
-        last365Contributions +
-        totalStars * 2 +
-        currentStreak * 5 +
-        totalRepositories * 3 +
-        mergedPullRequests * 10 +
-        closedIssues * 5 +
-        totalReviews * 3 +
-        recentActivityScore * 2 // Bonus for recent activity
+        overallContributions * 1 +
+        totalStars * 3 +
+        totalForks * 2.5 +
+        longestStreak * 2 +
+        totalRepositories * 1.5 +
+        mergedPullRequests * 6 +
+        closedIssues * 4 +
+        totalReviews * 5 +
+        followers * 2.5
       )
 
       // Add incremental metadata
@@ -582,7 +583,7 @@ class GitHubService {
       tempStreak = 0
     const today = new Date()
     today.setUTCHours(0, 0, 0, 0)
-    
+
     for (let i = sortedDays.length - 1; i >= 0; i--) {
       const day = sortedDays[i]
       const d = new Date(day.date)
@@ -593,7 +594,7 @@ class GitHubService {
       } else if (d.getTime() === today.getTime()) continue
       else break
     }
-    
+
     sortedDays.forEach((day: any) => {
       if (day.contributionCount > 0) {
         tempStreak++
@@ -863,14 +864,14 @@ class GitHubService {
     delayMs = 1000
   ): Promise<R[]> {
     const results: R[] = []
-    
+
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize)
-      
+
       const batchResults = await Promise.allSettled(
         batch.map(item => processor(item))
       )
-      
+
       batchResults.forEach((result, index) => {
         if (result.status === 'fulfilled') {
           results.push(result.value)
@@ -878,13 +879,13 @@ class GitHubService {
           console.warn(`Failed to process item ${i + index}:`, result.reason)
         }
       })
-      
+
       // Add delay between batches to avoid rate limiting
       if (i + batchSize < items.length) {
         await new Promise(resolve => setTimeout(resolve, delayMs))
       }
     }
-    
+
     return results
   }
 }
