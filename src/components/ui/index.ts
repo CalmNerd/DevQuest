@@ -12,3 +12,4 @@ export { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './sh
 export { default as MultiSelect } from './multi-select'
 export { HeroGrid } from './hero-grid'
 export { AccessLevelBadge, AccessLevelCard } from './access-level-badge'
+export { default as Loader } from './loader'

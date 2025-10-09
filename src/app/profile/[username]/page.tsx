@@ -33,6 +33,7 @@ import { ContributionGraph } from '@/components/features/contribution-graph'
 import { AchievementProgressDisplay } from '@/components/features/achievement-progress'
 import { ProfileData } from "@/types"
 import { formatCacheDate, formatProfileDate } from "@/lib/date-formatter"
+import Loader from "@/components/ui/loader"
 
 // Helper functions for achievements
 const getIconComponent = (iconName: string) => {
@@ -130,14 +131,10 @@ export default function ProfilePage() {
   // Show loading state until data is ready
   if (loading || !dataReady || !profile) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <RefreshCw className="mx-auto mb-4 h-8 w-8 animate-spin text-primary" />
-              <p className="text-lg text-muted-foreground">Loading profile...</p>
-            </div>
-          </div>
+      <div className="relative min-h-screen bg-background">
+        <div className="absolute inset-0  bg-radial from-background from-40% to-orange-500 to-90% opacity-30" />
+        <div className="container mx-auto h-screen flex items-center justify-center">
+            <Loader className="w-full" />
         </div>
       </div>
     )
@@ -297,8 +294,8 @@ export default function ProfilePage() {
                             <div
                               key={badge.timePeriod}
                               className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2 text-xs transition-colors ${badge.isCurrent
-                                  ? 'border-orange-500/50 bg-orange-500/10 hover:border-orange-500 text-orange-600 dark:text-orange-400'
-                                  : 'border-muted bg-muted/30 text-muted-foreground'
+                                ? 'border-orange-500/50 bg-orange-500/10 hover:border-orange-500 text-orange-600 dark:text-orange-400'
+                                : 'border-muted bg-muted/30 text-muted-foreground'
                                 }`}
                               title={`${badge.isCurrent ? 'Currently' : 'Was'} trending ${badge.timePeriod}${displayRank ? ` at rank #${displayRank}` : ''}${badge.language ? ` in ${badge.language}` : ''}`}
                             >
@@ -824,8 +821,8 @@ export default function ProfilePage() {
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.2 }}
                             className={`relative overflow-hidden rounded-lg border-2 p-5 transition-all ${badge.isCurrent
-                                ? 'border-orange-500 bg-gradient-to-br from-orange-500/10 to-orange-500/5 shadow-lg shadow-orange-500/20'
-                                : 'border-muted bg-muted/30'
+                              ? 'border-orange-500 bg-gradient-to-br from-orange-500/10 to-orange-500/5 shadow-lg shadow-orange-500/20'
+                              : 'border-muted bg-muted/30'
                               }`}
                           >
                             {/* Current Badge Indicator */}
