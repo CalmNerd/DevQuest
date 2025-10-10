@@ -4,7 +4,39 @@ import type { NextRequest } from 'next/server'
 let servicesInitialized = false
 let initializationPromise: Promise<void> | null = null
 
+function verifyAdminSession(request: NextRequest): boolean {
+  const sessionCookie = request.cookies.get('admin_session')
+  
+  if (!sessionCookie) {
+    return false
+  }
+
+  try {
+    // Verify the session token matches expected format
+    // Note: The actual verification against ADMIN_KEY is done in the API route
+    // Here we just check if the cookie exists and has a value
+    return sessionCookie.value.length > 0
+  } catch (error) {
+    console.error('Admin session verification error:', error)
+    return false
+  }
+}
+
 export async function middleware(request: NextRequest) {
+  // Protect admin routes
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    // Allow API routes for authentication
+    if (request.nextUrl.pathname.startsWith('/admin/api')) {
+      return NextResponse.next()
+    }
+
+    // Check if user has valid admin session
+    const isAuthenticated = verifyAdminSession(request)
+    
+    // If not authenticated, the page component will handle showing the login form
+    // We don't redirect here to allow the client-side auth check to work
+  }
+
   // Only initialize services on server side and for specific routes
   if (typeof window === 'undefined') {
     // If already initialized, skip

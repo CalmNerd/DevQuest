@@ -34,9 +34,11 @@ const Hero = () => {
                     className="mx-auto max-w-5xl flex flex-col items-center justify-center min-h-full"
                 >
                     <h1 className="mb-6 text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-semibold text-balance">
-                        <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0 items-center justify-center">
-                            <span className="text-[#F34B7D] px-4 py-2 -skew-x-20 rounded-md bg-[#F34B7D]/40 inline-block  backdrop-blur-xs"><span className="skew-x-20 rounded inline-block">Compete.</span></span>
-                            <span className="text-[#4B68FE] px-4 py-2 -skew-x-20 rounded-md bg-[#4B68FE]/40 inline-block  backdrop-blur-xs"><span className="skew-x-20 rounded inline-block">Contribute.</span></span>
+                        <div className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center justify-center">
+                            <div className="flex flex-row space-x-2 lg:space-x-4">
+                                <span className="text-[#4B68FE] px-4 py-2 -skew-x-20 rounded-md bg-[#4B68FE]/40 inline-block  backdrop-blur-xs"><span className="skew-x-20 rounded inline-block">Contribute.</span></span>
+                                <span className="text-[#F34B7D] px-4 py-2 -skew-x-20 rounded-md bg-[#F34B7D]/40 inline-block  backdrop-blur-xs"><span className="skew-x-20 rounded inline-block">Compete.</span></span>
+                            </div>
                             <span className="text-[#22E26F] px-4 py-2 -skew-x-20 rounded-md bg-[#22E26F]/40 inline-block  backdrop-blur-xs"><span className="skew-x-20 rounded inline-block">Hunt Bounties.</span></span>
                         </div>
                     </h1>

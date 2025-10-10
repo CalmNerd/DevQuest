@@ -14,6 +14,9 @@ const envSchema = z.object({
   // Analytics
   NEXT_PUBLIC_VERCEL_ANALYTICS_ID: z.string().optional(),
   
+  // Admin Configuration
+  ADMIN_KEY: z.string().min(1),
+  
   // Environment
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 })

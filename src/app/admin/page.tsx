@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatAdminDate } from "@/lib/date-formatter"
+import { AdminLogin } from "@/components/admin/AdminLogin"
+import { LogOut } from "lucide-react"
 
 interface ServiceStatus {
   isRunning: boolean
@@ -60,10 +62,34 @@ interface AnalyticsData {
 }
 
 export default function BackgroundServiceAdmin() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true)
   const [data, setData] = useState<BackgroundServiceData | null>(null)
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  const checkAuthentication = async () => {
+    try {
+      const response = await fetch("/api/admin/auth")
+      const result = await response.json()
+      setIsAuthenticated(result.authenticated === true)
+    } catch (error) {
+      console.error("Authentication check failed:", error)
+      setIsAuthenticated(false)
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+  
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/auth", { method: "DELETE" })
+      setIsAuthenticated(false)
+    } catch (error) {
+      console.error("Logout failed:", error)
+    }
+  }
 
   const fetchStatus = async () => {
     try {
@@ -118,15 +144,39 @@ export default function BackgroundServiceAdmin() {
   }
 
   useEffect(() => {
-    fetchStatus()
-    fetchAnalytics()
-    // Refresh status every 10 seconds
-    const interval = setInterval(() => {
+    // Check authentication first
+    checkAuthentication()
+  }, [])
+
+  useEffect(() => {
+    // Only fetch data if authenticated
+    if (isAuthenticated) {
       fetchStatus()
       fetchAnalytics()
-    }, 10000)
-    return () => clearInterval(interval)
-  }, [])
+      // Refresh status every 10 seconds
+      const interval = setInterval(() => {
+        fetchStatus()
+        fetchAnalytics()
+      }, 10000)
+      return () => clearInterval(interval)
+    }
+  }, [isAuthenticated])
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Verifying admin access...</div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show login form if not authenticated
+  if (!isAuthenticated) {
+    return <AdminLogin onLoginSuccess={() => setIsAuthenticated(true)} />
+  }
 
   if (loading) {
     return (
@@ -164,11 +214,21 @@ export default function BackgroundServiceAdmin() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Drizzle ORM Admin Panel</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage the gamified GitHub profiles system with Drizzle ORM
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Drizzle ORM Admin Panel</h1>
+          <p className="text-muted-foreground mt-2">
+            Manage the gamified GitHub profiles system with Drizzle ORM
+          </p>
+        </div>
+        <Button
+          onClick={handleLogout}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </Button>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
