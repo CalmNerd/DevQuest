@@ -206,6 +206,30 @@ export async function GET(request: NextRequest, { params }: { params: { username
 
     // Generate a unique user ID based on GitHub ID or username
     const userId = githubData.id?.toString() || `user_${username.toLowerCase()}`
+    
+    try {
+      console.log(`Creating/updating user in database for ${username}`)
+      await storage.upsertUser({
+        id: userId,
+        username: githubData.login,
+        githubId: githubData.id?.toString(),
+        email: githubData.email,
+        firstName: githubData.name?.split(' ')[0],
+        lastName: githubData.name?.split(' ').slice(1).join(' '),
+        name: githubData.name,
+        bio: githubData.bio,
+        profileImageUrl: githubData.avatar_url,
+        githubUrl: githubData.html_url,
+        blogUrl: githubData.blog,
+        twitterUsername: githubData.twitter_username,
+        location: githubData.location,
+        githubCreatedAt: githubData.created_at ? new Date(githubData.created_at) : undefined,
+      })
+      console.log(`User created/updated successfully for ${username}`)
+    } catch (error) {
+      console.error(`Failed to create/update user for ${username}:`, error)
+      // Continue anyway - we'll try again later
+    }
 
     // Fetch GitHub native achievements
     let githubNativeAchievements: ScrapedGitHubAchievement[] = []

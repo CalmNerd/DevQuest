@@ -255,9 +255,45 @@ export default function ProfilePage() {
                           {profile.powerLevel}
                         </Badge>
                       </div>
+
+                      {/* Trending Developer Badges */}
+                      {profile.trendingDeveloperBadges && profile.trendingDeveloperBadges.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {profile.trendingDeveloperBadges.map((badge) => {
+                            const displayRank = badge.isCurrent ? badge.currentRank : badge.bestRank
+                            return (
+                              <div
+                                key={badge.timePeriod}
+                                className={`flex items-center gap-2 rounded-full border p-2 text-xs transition-all duration-200 ${badge.isCurrent
+                                  ? 'border-orange-500/50 bg-orange-500/10 hover:border-orange-500 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400'
+                                  : 'border-muted bg-muted/30 text-muted-foreground hover:bg-muted/50'
+                                  }`}
+                                title={`${badge.isCurrent ? 'Currently' : 'Was'} trending ${badge.timePeriod}${displayRank ? ` at rank #${displayRank}` : ''}${badge.language ? ` in ${badge.language}` : ''}`}
+                              >
+                                <TrendingUp className="h-3 w-3" />
+                                <span className="font-medium capitalize">{badge.timePeriod}</span>
+                                {displayRank && (
+                                  <span className="rounded-full bg-current/20 p-2 text-[10px] font-bold">
+                                    #{displayRank}
+                                  </span>
+                                )}
+                                {badge.level > 1 && (
+                                  <span className="rounded-full bg-current/20 px-1.5 text-[10px] font-bold">
+                                    Lv.{badge.level}
+                                  </span>
+                                )}
+                                {!badge.isCurrent && (
+                                  <span className="text-[10px]">(Past)</span>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
                     <span className="text-sm text-muted-foreground">@{profile.login}</span>
                   </div>
+
                   {profile.bio && (
                     <div>
                       <span className="text-sm text-muted-foreground leading-relaxed">
@@ -331,52 +367,15 @@ export default function ProfilePage() {
                         </>
                       )}
                     </div>
-
-                    {/* Trending Developer Badges */}
-                    {profile.trendingDeveloperBadges && profile.trendingDeveloperBadges.length > 0 && (
-                      <div className="mt-4">
-                        <p className="mb-3 text-sm font-medium text-muted-foreground flex items-center gap-2">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500/20">
-                            <Flame className="h-3 w-3 text-orange-500" />
-                          </div>
-                          Trending Developer
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {profile.trendingDeveloperBadges.map((badge) => {
-                            const displayRank = badge.isCurrent ? badge.currentRank : badge.bestRank
-                            return (
-                              <div
-                                key={badge.timePeriod}
-                                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition-all duration-200 ${badge.isCurrent
-                                  ? 'border-orange-500/50 bg-orange-500/10 hover:border-orange-500 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400'
-                                  : 'border-muted bg-muted/30 text-muted-foreground hover:bg-muted/50'
-                                  }`}
-                                title={`${badge.isCurrent ? 'Currently' : 'Was'} trending ${badge.timePeriod}${displayRank ? ` at rank #${displayRank}` : ''}${badge.language ? ` in ${badge.language}` : ''}`}
-                              >
-                                <TrendingUp className="h-3 w-3" />
-                                <span className="font-medium capitalize">{badge.timePeriod}</span>
-                                {displayRank && (
-                                  <span className="rounded-full bg-current/20 px-1.5 text-[10px] font-bold">
-                                    #{displayRank}
-                                  </span>
-                                )}
-                                {badge.level > 1 && (
-                                  <span className="rounded-full bg-current/20 px-1.5 text-[10px] font-bold">
-                                    Lv.{badge.level}
-                                  </span>
-                                )}
-                                {!badge.isCurrent && (
-                                  <span className="text-[10px]">(Past)</span>
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   <div className="flex gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-muted/30">
+                        <Calendar className="h-3 w-3" />
+                      </div>
+                      Joined {formatProfileDate(profile.created_at)}
+                    </div>
                     {profile.location && (
                       <div className="flex items-center gap-1">
                         <div className="flex h-4 w-4 items-center justify-center rounded-full bg-muted/30">
@@ -385,7 +384,7 @@ export default function ProfilePage() {
                         {profile.location}
                       </div>
                     )}
-                    {profile.blog && (
+                    {/* {profile.blog && (
                       <div className="flex items-center gap-1">
                         <Link
                           href={profile.blog.startsWith("http") ? profile.blog : `https://${profile.blog}`}
@@ -398,13 +397,7 @@ export default function ProfilePage() {
                           </div>
                         </Link>
                       </div>
-                    )}
-                    <div className="flex items-center gap-1">
-                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-muted/30">
-                        <Calendar className="h-3 w-3" />
-                      </div>
-                      Joined {formatProfileDate(profile.created_at)}
-                    </div>
+                    )} */}
                   </div>
                 </div>
               </div>
