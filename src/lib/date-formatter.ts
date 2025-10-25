@@ -71,8 +71,13 @@ export class DateFormatter {
   static profile(utcTimestamp: string | Date, timezone?: string): string {
     return TimezoneService.formatForDisplay(utcTimestamp, {
       year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      // month: 'long',
+      // day: 'numeric',
+      month: undefined,
+      day: undefined,
+      hour: undefined,
+      minute: undefined,
+      timeZoneName: undefined
     }, timezone)
   }
 

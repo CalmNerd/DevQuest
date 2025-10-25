@@ -22,6 +22,8 @@ import {
   GitBranch,
   Flame,
   Shield,
+  ChevronDown,
+  Download,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -34,6 +36,9 @@ import { AchievementProgressDisplay } from '@/components/features/achievement-pr
 import { ProfileData } from "@/types"
 import { formatCacheDate, formatProfileDate } from "@/lib/date-formatter"
 import Loader from "@/components/ui/loader"
+import Image from "next/image"
+import Link from "next/link"
+import Header from "@/components/layout/Header"
 
 // Helper functions for achievements
 const getIconComponent = (iconName: string) => {
@@ -134,7 +139,7 @@ export default function ProfilePage() {
       <div className="relative min-h-screen bg-background">
         <div className="absolute inset-0 bg-radial from-background from-40% to-violet-500 to-90% opacity-10" />
         <div className="container mx-auto h-screen flex items-center justify-center">
-            <Loader className="w-full" />
+          <Loader className="w-full" />
         </div>
       </div>
     )
@@ -176,7 +181,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b border-border bg-card/50 backdrop-blur-sm">
+      {/* <div className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Button variant="ghost" onClick={() => window.history.back()}>
@@ -201,184 +206,179 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Profile Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <Card className="relative overflow-hidden bg-card/80 backdrop-blur-sm border-border/50">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
-            <CardContent className="relative p-8">
-              <div className="flex flex-col gap-6 md:flex-row md:items-start">
-                <Avatar className="h-32 w-32 border-4 border-primary/30 shadow-lg">
-                  <AvatarImage src={profile.avatar_url || "/placeholder.svg"} alt={profile.login} />
-                  <AvatarFallback className="text-2xl bg-primary/10">
-                    {profile.login && profile.login.length > 0 ? profile.login[0].toUpperCase() : 'U'}
-                  </AvatarFallback>
-                </Avatar>
+      <Header />
 
-                <div className="flex-1">
-                  <div className="mb-6">
-                    <h1 className="mb-2 text-3xl font-bold text-foreground">{profile.name || profile.login}</h1>
-                    <p className="text-lg text-muted-foreground">@{profile.login}</p>
-                    {profile.bio && <p className="mt-3 text-muted-foreground leading-relaxed">{profile.bio}</p>}
-                  </div>
 
-                  <div className="mb-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20">
-                        <Trophy className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <span className="font-semibold text-lg">Power Level {profile.powerLevel}</span>
-                        <Badge variant="secondary" className="ml-2 bg-primary/10 text-primary border-primary/30">
-                          {profile.points.toLocaleString()} points
+      <div className="container mx-auto px-4 py-8 flex flex-col gap-8">
+        <div className="">
+          {/* <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-foreground">Year in a nutshell</h2>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                <span>this year</span>
+                <ChevronDown className="h-4 w-4" />
+              </div>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Download className="h-4 w-4" />
+                Download Stats
+              </Button>
+            </div>
+          </div> */}
+
+          <Card className="bg-card/80 backdrop-blur-sm border-border/50 p-0 group transition-all hover:shadow-lg">
+            <CardContent className="p-8 space-y-6">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="flex flex-col gap-2">
+                  <Avatar className="h-32 w-32 border-4 border-primary/30 shadow-lg">
+                    <AvatarImage src={profile.avatar_url || "/placeholder.svg"} alt={profile.login} />
+                    <AvatarFallback className="text-2xl bg-primary/10">
+                      {profile.login && profile.login.length > 0 ? profile.login[0].toUpperCase() : 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+
+                <div className="flex flex-col gap-3 flex-1">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-foreground">
+                        {profile.name || profile.login}
+                      </span>
+                      <div
+                        className="flex items-center justify-center rounded-full bg-primary/20"
+                        title={`Power Level total ${profile.points.toLocaleString()} points | Progress to Level ${profile.powerLevel + 1} - ${profile.pointsToNext.toLocaleString()} / ${profile.nextLevelCost.toLocaleString()}`}>
+                        <div className="px-2 py-1">
+                          <Trophy className="h-5 w-5" />
+                        </div>
+                        <Badge variant="secondary" className="size-8 flex items-center justify-center shrink-0 bg-primary/10 text-primary text-xl border-primary/30">
+                          {profile.powerLevel}
                         </Badge>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>Progress to Level {profile.powerLevel + 1}</span>
-                        <span className="font-medium">
-                          {profile.pointsToNext.toLocaleString()} / {profile.nextLevelCost.toLocaleString()}
-                        </span>
-                      </div>
-                      <Progress value={profile.powerProgress} className="h-2" />
-                    </div>
+                    <span className="text-sm text-muted-foreground">@{profile.login}</span>
                   </div>
-
-                  {/* GitHub Native Achievements Preview */}
-                  {profile.githubNativeAchievements && profile.githubNativeAchievements.length > 0 && (
-                    <div className="mb-6">
-                      <p className="mb-3 text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20">
-                          <Github className="h-3 w-3 text-primary" />
-                        </div>
-                        GitHub Achievements
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {profile.githubNativeAchievements.slice(0, 4).map((achievement) => (
-                          <div
-                            key={achievement.slug}
-                            className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-xs hover:border-primary/50 hover:bg-primary/10 transition-all duration-200"
-                            title={achievement.description || achievement.name}
-                          >
-                            <img
-                              src={achievement.image}
-                              alt={achievement.name}
-                              className="h-4 w-4 object-contain"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none'
-                              }}
-                            />
-                            <span className="font-medium text-foreground">{achievement.name}</span>
-                            {achievement.tier && (
-                              <span className="text-muted-foreground text-[10px] bg-muted/30 px-1.5 py-0.5 rounded-full">
-                                {achievement.tier}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                        {profile.githubNativeAchievements.length > 4 && (
-                          <div className="flex items-center rounded-xl border border-dashed border-muted px-3 py-2 text-xs text-muted-foreground bg-muted/20">
-                            +{profile.githubNativeAchievements.length - 4} more
-                          </div>
-                        )}
-                      </div>
+                  {profile.bio && (
+                    <div>
+                      <span className="text-sm text-muted-foreground leading-relaxed">
+                        {profile.bio}
+                      </span>
                     </div>
                   )}
-
-                  {/* Trending Developer Badges */}
-                  {profile.trendingDeveloperBadges && profile.trendingDeveloperBadges.length > 0 && (
-                    <div className="mb-6">
-                      <p className="mb-3 text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500/20">
-                          <Flame className="h-3 w-3 text-orange-500" />
-                        </div>
-                        Trending Developer
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {profile.trendingDeveloperBadges.map((badge) => {
-                          const displayRank = badge.isCurrent ? badge.currentRank : badge.bestRank
-                          return (
+                  <div>
+                    {/* GitHub Native/ custom Achievements Preview */}
+                    <div className="flex flex-wrap gap-1">
+                      {profile.githubNativeAchievements && profile.githubNativeAchievements.length > 0 && (
+                        <>
+                          {profile.githubNativeAchievements.map((achievement: any, index: number) => (
                             <div
-                              key={badge.timePeriod}
-                              className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition-all duration-200 ${badge.isCurrent
-                                ? 'border-orange-500/50 bg-orange-500/10 hover:border-orange-500 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400'
-                                : 'border-muted bg-muted/30 text-muted-foreground hover:bg-muted/50'
-                                }`}
-                              title={`${badge.isCurrent ? 'Currently' : 'Was'} trending ${badge.timePeriod}${displayRank ? ` at rank #${displayRank}` : ''}${badge.language ? ` in ${badge.language}` : ''}`}
+                              key={`${achievement.slug}-${index}`}
+                              className="relative group"
+                              title={`${achievement.name}${achievement.tier ? ` (${achievement.tier})` : ''}${achievement.description ? ` - ${achievement.description}` : ''}`}
                             >
-                              <TrendingUp className="h-3 w-3" />
-                              <span className="font-medium capitalize">{badge.timePeriod}</span>
-                              {displayRank && (
-                                <span className="rounded-full bg-current/20 px-1.5 text-[10px] font-bold">
-                                  #{displayRank}
-                                </span>
-                              )}
-                              {badge.level > 1 && (
-                                <span className="rounded-full bg-current/20 px-1.5 text-[10px] font-bold">
-                                  Lv.{badge.level}
-                                </span>
-                              )}
-                              {!badge.isCurrent && (
-                                <span className="text-[10px]">(Past)</span>
+                              <img
+                                src={achievement.image}
+                                alt={achievement.name}
+                                className="h-6 w-6 rounded-sm border border-border/50 hover:border-primary/50 transition-colors"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                              {achievement.tier && (
+                                <div className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-yellow-400 text-[6px] flex items-center justify-center font-bold text-black">
+                                  {achievement.tier}
+                                </div>
                               )}
                             </div>
-                          )
-                        })}
-                      </div>
+                          ))}
+                        </>
+                      )}
+
+                      {profile.achievementProgress && profile.achievementProgress.length > 0 && (
+                        <>
+                          {profile.achievementProgress
+                            .filter(achievement => achievement.isUnlocked)
+                            .map(achievement => ({
+                              ...achievement,
+                              // Use level for sorting (non-leveled achievements get level 1 for sorting)
+                              sortLevel: achievement.isLeveled && achievement.currentLevel !== undefined
+                                ? achievement.currentLevel
+                                : 1
+                            }))
+                            .sort((a, b) => b.sortLevel - a.sortLevel)
+                            .filter(achievement => achievement.sortLevel > 0)
+                            .map((achievement) => {
+                              const IconComponent = getIconComponent(achievement.achievement.icon)
+                              const rarityColor = getRarityColor(achievement.achievement.rarity)
+
+                              return (
+                                <div
+                                  key={achievement.achievement.id}
+                                  className={`relative flex items-center gap-2 rounded-sm border p-1.5 ${rarityColor}`}
+                                  title={`${achievement.achievement.name} | ${achievement.achievement.description}`}
+                                >
+                                  <IconComponent className="h-3 w-3" />
+
+                                  {achievement.currentLevel && (
+                                    <div className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full text-[6px] font-bold bg-yellow-400 flex items-center justify-center font-bold text-black">
+                                      {achievement.currentLevel}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                        </>
+                      )}
                     </div>
-                  )}
 
-                  {/* Custom Achievements Preview */}
-                  {profile.achievementProgress && profile.achievementProgress.length > 0 && (
-                    <div className="mb-6">
-                      <p className="mb-3 text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/20">
-                          <Award className="h-3 w-3 text-accent" />
-                        </div>
-                        Top Custom Achievements
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {profile.achievementProgress
-                          .filter(achievement => achievement.isUnlocked)
-                          .map(achievement => ({
-                            ...achievement,
-                            // Use level for sorting (non-leveled achievements get level 1 for sorting)
-                            sortLevel: achievement.isLeveled && achievement.currentLevel !== undefined
-                              ? achievement.currentLevel
-                              : 1
-                          }))
-                          .sort((a, b) => b.sortLevel - a.sortLevel)
-                          .slice(0, 6)
-                          .map((achievement) => {
-                            const IconComponent = getIconComponent(achievement.achievement.icon)
-                            const rarityColor = getRarityColor(achievement.achievement.rarity)
-
+                    {/* Trending Developer Badges */}
+                    {profile.trendingDeveloperBadges && profile.trendingDeveloperBadges.length > 0 && (
+                      <div className="mt-4">
+                        <p className="mb-3 text-sm font-medium text-muted-foreground flex items-center gap-2">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500/20">
+                            <Flame className="h-3 w-3 text-orange-500" />
+                          </div>
+                          Trending Developer
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.trendingDeveloperBadges.map((badge) => {
+                            const displayRank = badge.isCurrent ? badge.currentRank : badge.bestRank
                             return (
                               <div
-                                key={achievement.achievement.id}
-                                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition-all duration-200 hover:scale-105 ${rarityColor}`}
-                                title={`${achievement.achievement.name} - ${achievement.achievement.description}`}
+                                key={badge.timePeriod}
+                                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition-all duration-200 ${badge.isCurrent
+                                  ? 'border-orange-500/50 bg-orange-500/10 hover:border-orange-500 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400'
+                                  : 'border-muted bg-muted/30 text-muted-foreground hover:bg-muted/50'
+                                  }`}
+                                title={`${badge.isCurrent ? 'Currently' : 'Was'} trending ${badge.timePeriod}${displayRank ? ` at rank #${displayRank}` : ''}${badge.language ? ` in ${badge.language}` : ''}`}
                               >
-                                <IconComponent className="h-4 w-4" />
-                                <span className="font-medium">{achievement.achievement.name}</span>
-                                <span className="text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded-full text-[10px]">
-                                  {(achievement as any).isLeveled && (achievement as any).currentLevel !== undefined
-                                    ? `Lv.${(achievement as any).currentLevel}`
-                                    : ''}
-                                </span>
+                                <TrendingUp className="h-3 w-3" />
+                                <span className="font-medium capitalize">{badge.timePeriod}</span>
+                                {displayRank && (
+                                  <span className="rounded-full bg-current/20 px-1.5 text-[10px] font-bold">
+                                    #{displayRank}
+                                  </span>
+                                )}
+                                {badge.level > 1 && (
+                                  <span className="rounded-full bg-current/20 px-1.5 text-[10px] font-bold">
+                                    Lv.{badge.level}
+                                  </span>
+                                )}
+                                {!badge.isCurrent && (
+                                  <span className="text-[10px]">(Past)</span>
+                                )}
                               </div>
                             )
                           })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  <div className="mb-6 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  <div className="flex gap-2 text-sm text-muted-foreground">
                     {profile.location && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <div className="flex h-4 w-4 items-center justify-center rounded-full bg-muted/30">
                           <MapPin className="h-3 w-3" />
                         </div>
@@ -386,222 +386,104 @@ export default function ProfilePage() {
                       </div>
                     )}
                     {profile.blog && (
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-4 w-4 items-center justify-center rounded-full bg-muted/30">
-                          <LinkIcon className="h-3 w-3" />
-                        </div>
-                        <a
+                      <div className="flex items-center gap-1">
+                        <Link
                           href={profile.blog.startsWith("http") ? profile.blog : `https://${profile.blog}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="hover:text-primary transition-colors"
                         >
-                          {profile.blog}
-                        </a>
+                          <div className="flex h-4 w-4 items-center justify-center rounded-full bg-muted/30">
+                            <LinkIcon className="h-3 w-3" />
+                          </div>
+                        </Link>
                       </div>
                     )}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <div className="flex h-4 w-4 items-center justify-center rounded-full bg-muted/30">
                         <Calendar className="h-3 w-3" />
                       </div>
                       Joined {formatProfileDate(profile.created_at)}
                     </div>
                   </div>
+                </div>
+              </div>
 
-                  <div className="flex gap-3">
-                    <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                      <a
-                        href={`https://github.com/${profile.login}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="gap-2"
-                      >
-                        <Github className="h-4 w-4" />
-                        View on GitHub
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </Button>
-                    <Button variant="outline" className="border-border/50 hover:bg-muted/50">Follow</Button>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="flex items-center gap-4 bg-muted/40 p-4 rounded-xl">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-chart-1/20 group-hover:bg-chart-1/30 transition-colors">
+                    <TrendingUp className="h-6 w-6 text-chart-1" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-foreground">{profile.totalContributions.toLocaleString()}</div>
+                    <div className="text-sm text-muted-foreground">Total Contributions</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 bg-muted/40 p-4 rounded-xl">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                    <Star className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-foreground">{profile.totalStars.toLocaleString()}</div>
+                    <div className="text-sm text-muted-foreground">Total Stars</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 bg-muted/40 p-4 rounded-xl">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 group-hover:bg-accent/30 transition-colors">
+                    <Users className="h-6 w-6 text-accent" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-foreground">{profile.followers.toLocaleString()}</div>
+                    <div className="text-sm text-muted-foreground">Followers</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 bg-muted/40 p-4 rounded-xl">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary/20 group-hover:bg-secondary/30 transition-colors">
+                    <BookOpen className="h-6 w-6 text-secondary" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-foreground">{profile.public_repos.toLocaleString()}</div>
+                    <div className="text-sm text-muted-foreground">Public Repos</div>
                   </div>
                 </div>
               </div>
+
+              {/* Contribution Graph */}
+              {profile.contributionGraph && (
+                <ContributionGraph contributionGraph={profile.contributionGraph} />
+              )}
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
-        {/* Primary Stats Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4"
-        >
-          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                  <Star className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-foreground">{profile.totalStars.toLocaleString()}</div>
-                  <div className="text-sm text-muted-foreground">Total Stars</div>
-                </div>
+        <div className="">
+          {/* <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-foreground">Year in a nutshell</h2>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                <span>this year</span>
+                <ChevronDown className="h-4 w-4" />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 group-hover:bg-accent/30 transition-colors">
-                  <Users className="h-6 w-6 text-accent" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-foreground">{profile.followers.toLocaleString()}</div>
-                  <div className="text-sm text-muted-foreground">Followers</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary/20 group-hover:bg-secondary/30 transition-colors">
-                  <BookOpen className="h-6 w-6 text-secondary" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-foreground">{profile.public_repos.toLocaleString()}</div>
-                  <div className="text-sm text-muted-foreground">Public Repos</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-chart-1/20 group-hover:bg-chart-1/30 transition-colors">
-                  <TrendingUp className="h-6 w-6 text-chart-1" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-foreground">{profile.totalCommits.toLocaleString()}</div>
-                  <div className="text-sm text-muted-foreground">Total Commits</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Secondary Stats Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4"
-        >
-          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/20 group-hover:bg-green-500/30 transition-colors">
-                  <GitFork className="h-6 w-6 text-green-500" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-foreground">{profile.totalForks.toLocaleString()}</div>
-                  <div className="text-sm text-muted-foreground">Total Forks</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors">
-                  <Users className="h-6 w-6 text-blue-500" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-foreground">{profile.totalWatchers.toLocaleString()}</div>
-                  <div className="text-sm text-muted-foreground">Total Watchers</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-500/20 group-hover:bg-purple-500/30 transition-colors">
-                  <TrendingUp className="h-6 w-6 text-purple-500" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-foreground">{profile.totalPRs.toLocaleString()}</div>
-                  <div className="text-sm text-muted-foreground">Pull Requests</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="group transition-all hover:scale-105 hover:shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500/20 group-hover:bg-orange-500/30 transition-colors">
-                  <BookOpen className="h-6 w-6 text-orange-500" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-foreground">{profile.totalIssues.toLocaleString()}</div>
-                  <div className="text-sm text-muted-foreground">Issues</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Main Content */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5 bg-card/80 backdrop-blur-sm border-border/50">
-              <TabsTrigger value="overview" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Overview</TabsTrigger>
-              <TabsTrigger value="repositories" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Repositories</TabsTrigger>
-              <TabsTrigger value="insights" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Insights</TabsTrigger>
-              <TabsTrigger value="achievements" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Achievements</TabsTrigger>
-              <TabsTrigger value="activity" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Activity</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid gap-6 lg:grid-cols-2">
-                {/* Languages */}
-                <Card className="bg-card/80 backdrop-blur-sm border-border/50">
+              <Button variant="outline" size="sm" className="gap-2">
+                <Download className="h-4 w-4" />
+                Download Stats
+              </Button>
+            </div>
+          </div> */}
+          <Card className="bg-card/80 backdrop-blur-sm border-border/50 p-0 group transition-all hover:shadow-lg">
+            <CardContent className="p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* 1. Streaks */}
+                <Card className="bg-card/80 backdrop-blur-sm border-border/50 group transition-all hover:bg-card/60 hover:shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-foreground">
-                      <div className="h-2 w-2 rounded-full bg-primary" />
-                      Top Languages
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500/20 group-hover:bg-orange-500/30 transition-colors">
+                        <Flame className="h-4 w-4 text-orange-500" />
+                      </div>
+                      Streaks
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {topLanguages.map(([language, count]) => {
-                      const percentage = (count / totalLanguageRepos) * 100
-                      return (
-                        <div key={language} className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-foreground">{language}</span>
-                            <span className="text-muted-foreground">{count} repos</span>
-                          </div>
-                          <Progress value={percentage} className="h-2 bg-muted/30" />
-                        </div>
-                      )
-                    })}
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-card/80 backdrop-blur-sm border-border/50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-foreground">
-                      <div className="h-2 w-2 rounded-full bg-accent" />
-                      Contribution Stats
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Current Streak</span>
                       <span className="font-semibold text-foreground">{profile.contributionStreak} days</span>
@@ -637,111 +519,192 @@ export default function ProfilePage() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-card/80 backdrop-blur-sm border-border/50">
+                {/* 2. Top Languages */}
+                <Card className="bg-card/80 backdrop-blur-sm border-border/50 group transition-all hover:bg-card/60 hover:shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-foreground">
-                      <div className="h-2 w-2 rounded-full bg-green-500" />
-                      Activity Breakdown
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                        <BookOpen className="h-4 w-4 text-primary" />
+                      </div>
+                      Top Languages
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                      {topLanguages.slice(0, 5).map(([language, count]) => {
+                        const percentage = totalLanguageRepos > 0 ? ((count as number) / totalLanguageRepos) * 100 : 0
+                        return (
+                          <div key={language} className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-foreground">{language}</span>
+                              <span className="text-muted-foreground">{count} repos ({percentage.toFixed(1)}%)</span>
+                            </div>
+                            <Progress value={percentage} className="h-1.5 bg-muted/30" />
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <div className="pt-2 border-t border-border/50 space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Total Languages</span>
+                        <span className="font-semibold text-foreground">{profile.languageCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Top Language %</span>
+                        <span className="font-semibold text-foreground">{profile.topLanguagePercentage.toFixed(1)}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Rare Language Repos</span>
+                        <span className="font-semibold text-foreground">{profile.rareLanguageRepos}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 3. Repositories */}
+                <Card className="bg-card/80 backdrop-blur-sm border-border/50 group transition-all hover:bg-card/60 hover:shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-foreground">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500/20 group-hover:bg-green-500/30 transition-colors">
+                        <GitFork className="h-4 w-4 text-green-500" />
+                      </div>
+                      Top Repositories
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 overflow-y-auto max-h-[300px] hide-scrollbar">
+                    {profile.repos && profile.repos.length > 0 ? (
+                      profile.repos.map((repo) => (
+                        <div key={repo.id} className="p-3 rounded-lg border border-border/30 bg-muted/20 hover:bg-muted/40 transition-colors">
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="font-semibold text-foreground hover:text-primary transition-colors">
+                              <a
+                                href={repo.html_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:underline"
+                              >
+                                {repo.name}
+                              </a>
+                            </h4>
+                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                            {repo.description || 'No description available'}
+                          </p>
+                          {repo.language && (
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <div className="h-2 w-2 rounded-full bg-primary" />
+                                <span>{repo.language}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Star className="h-3 w-3" />
+                                <span>{repo.stargazers_count}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <GitFork className="h-3 w-3" />
+                                <span>{repo.forks_count}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <BookOpen className="mx-auto mb-2 h-8 w-8" />
+                        <p className="text-sm">No repositories available</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* 4. Rank & Stats */}
+                <Card className="bg-card/80 backdrop-blur-sm border-border/50 group transition-all hover:bg-card/60 hover:shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-foreground">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20 group-hover:bg-purple-500/30 transition-colors">
+                        <Trophy className="h-4 w-4 text-purple-500" />
+                      </div>
+                      Rank & Stats
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total PRs</span>
-                      <span className="font-semibold text-foreground">{profile.totalPRs.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Total Stars</span>
+                      <span className="font-semibold text-foreground">{profile.totalStars.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Merged PRs</span>
-                      <span className="font-semibold text-foreground">{profile.mergedPullRequests.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Total Forks</span>
+                      <span className="font-semibold text-foreground">{profile.totalForks.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total Issues</span>
-                      <span className="font-semibold text-foreground">{profile.totalIssues.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Total Watchers</span>
+                      <span className="font-semibold text-foreground">{profile.totalWatchers.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Closed Issues</span>
-                      <span className="font-semibold text-foreground">{profile.closedIssues.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Followers</span>
+                      <span className="font-semibold text-foreground">{profile.followers.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Following</span>
+                      <span className="font-semibold text-foreground">{profile.following.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Public Repos</span>
+                      <span className="font-semibold text-foreground">{profile.public_repos.toLocaleString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 5. Contributions & Activity */}
+                <Card className="bg-card/80 backdrop-blur-sm border-border/50 group transition-all hover:bg-card/60 hover:shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-foreground">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors">
+                        <GitBranch className="h-4 w-4 text-blue-500" />
+                      </div>
+                      Contributions & Activity
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total Commits</span>
+                      <span className="font-semibold text-foreground">{profile.totalCommits.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Pull Requests</span>
+                      <span className="font-semibold text-foreground">{profile.totalPRs.toLocaleString()} (Merged: {profile.mergedPullRequests.toLocaleString()})</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Issues</span>
+                      <span className="font-semibold text-foreground">{profile.totalIssues.toLocaleString()} (Closed: {profile.closedIssues.toLocaleString()})</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Code Reviews</span>
                       <span className="font-semibold text-foreground">{profile.totalReviews.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Following</span>
-                      <span className="font-semibold text-foreground">{profile.following.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Contributed To</span>
+                      <span className="font-semibold text-foreground">{profile.contributedTo.toLocaleString()} repos</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">External Contributors</span>
+                      <span className="font-semibold text-foreground">{profile.externalContributors.toLocaleString()}</span>
                     </div>
                   </CardContent>
                 </Card>
-              </div>
 
-              {/* Contribution Graph */}
-              {profile.contributionGraph && (
-                <ContributionGraph contributionGraph={profile.contributionGraph} />
-              )}
-            </TabsContent>
-
-            <TabsContent value="repositories" className="space-y-6">
-              <div className="grid gap-4">
-                {profile.repos && profile.repos.length > 0 ? (
-                  profile.repos.slice(0, 10).map((repo) => (
-                    <Card key={repo.id} className="transition-all hover:shadow-lg hover:scale-[1.02] bg-card/80 backdrop-blur-sm border-border/50">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="mb-2 font-semibold text-foreground">
-                              <a
-                                href={repo.html_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-primary transition-colors"
-                              >
-                                {repo.name}
-                              </a>
-                            </h3>
-                            {repo.description && <p className="mb-3 text-sm text-muted-foreground leading-relaxed">{repo.description}</p>}
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              {repo.language && (
-                                <div className="flex items-center gap-2">
-                                  <div className="h-2 w-2 rounded-full bg-primary" />
-                                  <span className="text-foreground">{repo.language}</span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-2">
-                                <Star className="h-3 w-3" />
-                                <span className="text-foreground">{repo.stargazers_count}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <GitFork className="h-3 w-3" />
-                                <span className="text-foreground">{repo.forks_count}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <Card className="bg-card/80 backdrop-blur-sm border-border/50">
-                    <CardContent className="p-6 text-center">
-                      <BookOpen className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                      <h3 className="mb-2 text-lg font-semibold text-foreground">No Repositories Found</h3>
-                      <p className="text-muted-foreground">This user doesn't have any public repositories yet.</p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="insights" className="space-y-6">
-              <div className="grid gap-6 lg:grid-cols-2">
-                {/* Repository Insights */}
-                <Card className="bg-card/80 backdrop-blur-sm border-border/50">
+                {/* 6. More Insights */}
+                <Card className="bg-card/80 backdrop-blur-sm border-border/50 group transition-all hover:bg-card/60 hover:shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-foreground">
-                      <div className="h-2 w-2 rounded-full bg-blue-500" />
-                      Repository Insights
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 group-hover:bg-accent/30 transition-colors">
+                        <TrendingUp className="h-4 w-4 text-accent" />
+                      </div>
+                      More Insights
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Repos with Stars</span>
                       <span className="font-semibold text-foreground">{profile.reposWithStars.toLocaleString()}</span>
@@ -751,14 +714,6 @@ export default function ProfilePage() {
                       <span className="font-semibold text-foreground">{profile.reposWithForks.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Contributed To</span>
-                      <span className="font-semibold text-foreground">{profile.contributedTo.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">External Contributors</span>
-                      <span className="font-semibold text-foreground">{profile.externalContributors.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
                       <span className="text-muted-foreground">Dependency Usage</span>
                       <span className="font-semibold text-foreground">{profile.dependencyUsage.toLocaleString()}</span>
                     </div>
@@ -766,271 +721,35 @@ export default function ProfilePage() {
                       <span className="text-muted-foreground">Language Count</span>
                       <span className="font-semibold text-foreground">{profile.languageCount.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Top Language %</span>
-                      <span className="font-semibold text-foreground">{profile.topLanguagePercentage.toLocaleString()}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Rare Language Repos</span>
-                      <span className="font-semibold text-foreground">{profile.rareLanguageRepos.toLocaleString()}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Language Distribution */}
-                <Card className="bg-card/80 backdrop-blur-sm border-border/50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-foreground">
-                      <div className="h-2 w-2 rounded-full bg-purple-500" />
-                      Language Distribution
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {topLanguages.map(([language, count]) => {
-                      const percentage = (count / totalLanguageRepos) * 100
-                      return (
-                        <div key={language} className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-foreground">{language}</span>
-                            <span className="text-muted-foreground">{count} repos ({percentage.toFixed(1)}%)</span>
-                          </div>
-                          <Progress value={percentage} className="h-2 bg-muted/30" />
-                        </div>
-                      )
-                    })}
-                    {topLanguages.length === 0 && (
-                      <div className="text-center py-4 text-muted-foreground">
-                        No language data available
+                    <div className="pt-2 border-t border-border/50">
+                      <div className="flex justify-between mb-2">
+                        <span className="text-muted-foreground">Top Languages</span>
                       </div>
-                    )}
+                      <div className="flex flex-wrap gap-1">
+                        {topLanguages.slice(0, 5).map(([lang]) => (
+                          <Badge key={lang} variant="secondary" className="text-xs">
+                            {lang}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
-            </TabsContent>
+            </CardContent>
+          </Card>
 
-            <TabsContent value="achievements" className="space-y-6">
-              {/* Trending Developer Badges Section */}
-              {profile.trendingDeveloperBadges && profile.trendingDeveloperBadges.length > 0 && (
-                <Card className="bg-card/80 backdrop-blur-sm border-border/50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-foreground">
-                      <Flame className="h-5 w-5 text-orange-500" />
-                      Trending Developer Badges
-                      <Badge variant="secondary" className="ml-2 bg-orange-500/10 text-orange-500 border-orange-500/30">
-                        {profile.trendingDeveloperBadges.length}
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-4 md:grid-cols-3">
-                      {profile.trendingDeveloperBadges.map((badge) => {
-                        const badgeDate = new Date(badge.lastTrendingAt)
-                        const formattedDate = badgeDate.toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })
-
-                        return (
-                          <motion.div
-                            key={badge.timePeriod}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.2 }}
-                            className={`relative overflow-hidden rounded-lg border-2 p-5 transition-all ${badge.isCurrent
-                              ? 'border-orange-500 bg-gradient-to-br from-orange-500/10 to-orange-500/5 shadow-lg shadow-orange-500/20'
-                              : 'border-muted bg-muted/30'
-                              }`}
-                          >
-                            {/* Current Badge Indicator */}
-                            {badge.isCurrent && (
-                              <div className="absolute top-2 right-2">
-                                <div className="relative flex h-3 w-3">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
-                                </div>
-                              </div>
-                            )}
-
-                            <div className="flex items-start gap-3">
-                              {/* Icon */}
-                              <div className={`flex-shrink-0 rounded-lg p-3 ${badge.isCurrent ? 'bg-orange-500/20' : 'bg-muted'
-                                }`}>
-                                <TrendingUp className={`h-6 w-6 ${badge.isCurrent ? 'text-orange-500' : 'text-muted-foreground'
-                                  }`} />
-                              </div>
-
-                              {/* Content */}
-                              <div className="flex-1 space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <h4 className="font-semibold capitalize text-base">
-                                    {badge.timePeriod} Trending
-                                  </h4>
-                                  {badge.level > 1 && (
-                                    <Badge variant={badge.isCurrent ? "default" : "secondary"} className="text-xs">
-                                      Level {badge.level}
-                                    </Badge>
-                                  )}
-                                </div>
-
-                                <div className="space-y-1 text-sm">
-                                  <p className={badge.isCurrent ? 'text-orange-600 dark:text-orange-400 font-medium' : 'text-muted-foreground'}>
-                                    {badge.isCurrent ? '🔥 Currently Trending!' : '📊 Past Achievement'}
-                                  </p>
-
-                                  {/* Show current rank if trending, best rank if past */}
-                                  {badge.isCurrent && badge.currentRank && (
-                                    <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">
-                                      Current Rank: <span className="text-base">#{badge.currentRank}</span>
-                                    </p>
-                                  )}
-
-                                  {!badge.isCurrent && badge.bestRank && (
-                                    <p className="text-xs font-medium text-muted-foreground">
-                                      Best Rank: <span className="text-sm font-semibold">#{badge.bestRank}</span>
-                                    </p>
-                                  )}
-
-                                  {badge.language && (
-                                    <p className="text-xs text-muted-foreground">
-                                      Language: <span className="font-medium">{badge.language}</span>
-                                    </p>
-                                  )}
-
-                                  <p className="text-xs text-muted-foreground">
-                                    {badge.isCurrent ? 'Last seen' : 'Last trending'}: {formattedDate}
-                                  </p>
-
-                                  {badge.level > 1 && (
-                                    <p className="text-xs text-muted-foreground">
-                                      Achieved {badge.level} times
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Progress bar for level */}
-                            {badge.level > 1 && (
-                              <div className="mt-3 pt-3 border-t border-current/10">
-                                <div className="flex items-center justify-between text-xs mb-1">
-                                  <span className="text-muted-foreground">Achievements</span>
-                                  <span className={badge.isCurrent ? 'text-orange-600 dark:text-orange-400 font-semibold' : 'text-muted-foreground'}>
-                                    {badge.level}
-                                  </span>
-                                </div>
-                                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                                  <div
-                                    className={`h-full rounded-full transition-all ${badge.isCurrent ? 'bg-gradient-to-r from-orange-500 to-orange-600' : 'bg-muted-foreground/50'
-                                      }`}
-                                    style={{ width: `${Math.min(100, badge.level * 10)}%` }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </motion.div>
-                        )
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* GitHub Native Achievements Section */}
-              {profile.githubNativeAchievements && profile.githubNativeAchievements.length > 0 && (
-                <Card className="bg-card/80 backdrop-blur-sm border-border/50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-foreground">
-                      <Github className="h-5 w-5 text-primary" />
-                      GitHub Native Achievements
-                      <Badge variant="secondary" className="ml-2 bg-primary/10 text-primary border-primary/30">
-                        {profile.githubNativeAchievements.length}
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {profile.githubNativeAchievements.map((achievement) => (
-                        <motion.div
-                          key={achievement.slug}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.2 }}
-                          className="group relative overflow-hidden rounded-lg border-2 border-primary/20 bg-card p-4 transition-all hover:border-primary/50 hover:shadow-lg"
-                        >
-                          <div className="flex items-start gap-3">
-                            {/* Achievement Image */}
-                            <div className="relative flex-shrink-0">
-                              <img
-                                src={achievement.image}
-                                alt={achievement.name}
-                                className="h-16 w-16 rounded-lg object-contain"
-                                onError={(e) => {
-                                  // Fallback to Trophy icon if image fails to load
-                                  const target = e.target as HTMLImageElement
-                                  target.style.display = 'none'
-                                  const fallback = target.nextElementSibling as HTMLElement
-                                  if (fallback) fallback.style.display = 'flex'
-                                }}
-                              />
-                              <div className="hidden h-16 w-16 items-center justify-center rounded-lg bg-primary/10">
-                                <Trophy className="h-8 w-8 text-primary" />
-                              </div>
-                            </div>
-
-                            {/* Achievement Info */}
-                            <div className="flex-1 space-y-1">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-semibold text-sm">{achievement.name}</h4>
-                                {achievement.tier && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {achievement.tier}
-                                  </Badge>
-                                )}
-                              </div>
-                              {achievement.description && (
-                                <p className="text-xs text-muted-foreground line-clamp-2">
-                                  {achievement.description}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Hover effect gradient */}
-                          <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/5 to-primary/0 opacity-0 transition-opacity group-hover:opacity-100" />
-                        </motion.div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Custom Achievement Progress */}
-              <AchievementProgressDisplay
-                achievements={profile.achievementProgress as any || []}
-                title="Custom Achievements"
-                showProgress={true}
-                groupBy="category"
-              />
-            </TabsContent>
-
-            <TabsContent value="activity" className="space-y-6">
-              <Card className="bg-card/80 backdrop-blur-sm border-border/50">
-                <CardHeader>
-                  <CardTitle className="text-foreground">Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Calendar className="mx-auto mb-4 h-12 w-12" />
-                    <p className="text-foreground">Activity timeline coming soon!</p>
-                    <p className="text-sm">We're working on bringing you detailed contribution insights.</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </motion.div>
+          {/* <div className="grid grid-cols-3 gap-4">
+            <div>streaks</div>
+            <div>top language</div>
+            <div>repo list- top repo on top</div>
+            <div>Rank</div>
+            <div>Contribution,commit Issues and pr</div>
+            <div>more</div>
+          </div> */}
+        </div>
       </div>
+
     </div>
   )
 }

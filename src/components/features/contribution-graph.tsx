@@ -124,12 +124,12 @@ export function ContributionGraph({ contributionGraph, className = "" }: Contrib
   if (!contributionGraph?.weeks || contributionGraph.weeks.length === 0) {
     return (
       <Card className={className}>
-        <CardHeader>
+        {/* <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             Contribution Graph
           </CardTitle>
-        </CardHeader>
+        </CardHeader> */}
         <CardContent>
           <div className="flex items-center justify-center py-12 text-muted-foreground">
             <div className="text-center">
@@ -145,10 +145,10 @@ export function ContributionGraph({ contributionGraph, className = "" }: Contrib
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        {/* <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5" />
           Contribution Graph
-        </CardTitle>
+        </CardTitle> */}
         <div className="flex items-center gap-6 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-foreground">{contributionGraph.totalContributions}</span>
