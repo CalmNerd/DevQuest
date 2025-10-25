@@ -210,27 +210,25 @@ export class DatabaseStorage implements IStorage {
 
     for (const definition of definitions) {
       try {
-        await db
-          .insert(achievements)
-          .values({
-            name: definition.name,
-            description: definition.description,
-            category: definition.category,
-            icon: definition.icon,
-            rarity: definition.rarity,
-            tier: definition.tier,
-            criteria: definition.criteria,
-            points: definition.points,
-            isLeveled: definition.isLeveled || false,
-            isGitHubNative: definition.isGitHubNative || false,
-            source: definition.source || "custom",
-            isActive: definition.isActive || true,
-          })
-          .onConflictDoUpdate({
-            target: [achievements.category],
-            set: {
+        // Check if achievement already exists to prevent duplicates
+        const existingAchievement = await db
+          .select()
+          .from(achievements)
+          .where(
+            and(
+              eq(achievements.name, definition.name),
+              eq(achievements.category, definition.category)
+            )
+          )
+          .limit(1)
+
+        if (existingAchievement.length === 0) {
+          await db
+            .insert(achievements)
+            .values({
               name: definition.name,
               description: definition.description,
+              category: definition.category,
               icon: definition.icon,
               rarity: definition.rarity,
               tier: definition.tier,
@@ -240,8 +238,11 @@ export class DatabaseStorage implements IStorage {
               isGitHubNative: definition.isGitHubNative || false,
               source: definition.source || "custom",
               isActive: definition.isActive || true,
-            },
-          })
+            })
+          console.log(`✅ Seeded achievement: ${definition.name}`)
+        } else {
+          console.log(`⏭️  Achievement already exists: ${definition.name}`)
+        }
       } catch (error) {
         console.error(`Failed to seed achievement "${definition.name}":`, error)
       }
