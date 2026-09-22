@@ -476,3 +476,29 @@ export interface ScrapedGitHubAchievement {
   tier: string | null
   description?: string | null
 }
+
+// Head-to-head comparison of two GitHub users, served by /api/compare
+export interface CompareProfileSummary {
+  login: string
+  name: string | null
+  avatar_url: string
+  html_url: string
+  created_at: string
+  points: number
+  powerLevel: number
+  powerProgress: number
+}
+
+export interface CompareResponse {
+  a: CompareProfileSummary
+  b: CompareProfileSummary
+  metrics: Array<{
+    category: string
+    label: string
+    a: { value: number; level: number }
+    b: { value: number; level: number }
+    winner: "a" | "b" | "tie"
+  }>
+  wins: { a: number; b: number; ties: number }
+  winner: "a" | "b" | "tie"
+}

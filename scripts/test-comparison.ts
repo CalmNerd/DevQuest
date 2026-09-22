@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { compareProfiles, completedYearsSince, type ComparableProfile } from "../src/lib/comparison"
+import { isValidGitHubUsername } from "../src/lib/utils"
 
 const NOW = new Date("2025-06-15T00:00:00Z")
 
@@ -73,5 +74,13 @@ const messy = compareProfiles(
 )
 assert.equal(messy.metrics.find((m) => m.category === "stars")?.a.value, 0)
 assert.equal(messy.winner, "tie")
+
+// Username validation guards the GitHub API path the handle is spliced into.
+for (const ok of ["CalmNerd", "a", "a-b", "torvalds", "a".repeat(39)]) {
+  assert.equal(isValidGitHubUsername(ok), true, `expected ${ok} to be valid`)
+}
+for (const bad of ["", "-lead", "trail-", "double--hyphen", "has space", "a/../b", "a".repeat(40), "user?x=1"]) {
+  assert.equal(isValidGitHubUsername(bad), false, `expected ${JSON.stringify(bad)} to be rejected`)
+}
 
 console.log(`comparison: all checks passed (${twin.metrics.length} metrics)`)
