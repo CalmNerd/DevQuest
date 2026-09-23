@@ -21,6 +21,17 @@ export function getPowerLevelFromPoints(points: number): number {
   return level
 }
 
+/**
+ * GitHub's own handle rule: alphanumeric with single inner hyphens, no leading
+ * or trailing hyphen, 39 characters max. Worth enforcing before a username
+ * reaches a URL, since it is interpolated into GitHub API paths.
+ */
+const GITHUB_USERNAME_PATTERN = /^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/
+
+export function isValidGitHubUsername(username: string): boolean {
+  return GITHUB_USERNAME_PATTERN.test(username)
+}
+
 export const getTimeAgo = (dateString: string) => {
   const date = new Date(dateString)
   const now = new Date()
