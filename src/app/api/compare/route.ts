@@ -4,6 +4,7 @@ import { getPowerProgress } from "@/services/api/power-level.service"
 import { compareProfiles, type ComparableProfile } from "@/lib/comparison"
 import { ApiResponse } from "@/lib/api-response"
 import { isValidGitHubUsername } from "@/lib/utils"
+import { storage } from "@/lib/storage"
 import type { CompareProfileSummary, CompareResponse } from "@/types/github.types"
 
 class UserNotFoundError extends Error {
@@ -13,18 +14,54 @@ class UserNotFoundError extends Error {
 }
 
 /**
- * Deliberately skips the persistence, scraping and leaderboard work that
- * /api/github/[username] does: a comparison is a read, and should not have
- * side effects. Points and levels still come from the same service, so the
- * numbers agree with the profile page.
+ * DB-first: reuses a cached profile+stats row when one exists, so repeat
+ * comparisons don't re-pay for the GraphQL round trips. A miss falls back to
+ * githubService and persists the result, same as /api/github/[username].
  *
- * Needs GITHUB_TOKEN. It makes no database calls, but still requires
- * DATABASE_URL to be set: githubService imports lib/storage, and
- * db-http.service throws at import time when that variable is missing.
+ * Needs GITHUB_TOKEN for the fallback fetch, and DATABASE_URL always:
+ * githubService imports lib/storage, and db-http.service throws at import
+ * time when that variable is missing.
  */
 async function loadComparable(
   username: string,
 ): Promise<{ summary: CompareProfileSummary; comparable: ComparableProfile }> {
+  const cachedUser = await storage.getUserByUsername(username)
+  const cachedStats = cachedUser && (await storage.getGithubStats(cachedUser.id))
+
+  if (cachedUser && cachedStats) {
+    const power = getPowerProgress(cachedStats.points || 0)
+
+    const summary: CompareProfileSummary = {
+      login: cachedUser.username ?? username,
+      name: cachedUser.name ?? null,
+      avatar_url: cachedUser.profileImageUrl ?? "",
+      html_url: cachedUser.githubUrl ?? `https://github.com/${username}`,
+      created_at: cachedUser.githubCreatedAt?.toISOString() ?? new Date().toISOString(),
+      points: cachedStats.points || 0,
+      powerLevel: power.level,
+      powerProgress: power.progressPercent,
+    }
+
+    const comparable: ComparableProfile = {
+      login: summary.login,
+      created_at: summary.created_at,
+      followers: cachedStats.followers ?? 0,
+      totalStars: cachedStats.totalStars ?? 0,
+      totalContributions: cachedStats.overallContributions ?? 0,
+      public_repos: cachedStats.totalRepositories ?? 0,
+      longestStreak: cachedStats.longestStreak ?? 0,
+      closedIssues: cachedStats.closedIssues ?? 0,
+      mergedPullRequests: cachedStats.mergedPullRequests ?? 0,
+      totalReviews: cachedStats.totalReviews ?? 0,
+      languageCount: cachedStats.languageCount ?? 0,
+      externalContributors: cachedStats.externalContributors ?? 0,
+      points: cachedStats.points || 0,
+      powerLevel: power.level,
+    }
+
+    return { summary, comparable }
+  }
+
   // Confirm the user exists before paying for the stats fetch, which costs
   // several GraphQL round trips.
   const user = await githubService.fetchUserData(username).catch((error: unknown) => {
@@ -36,6 +73,32 @@ async function loadComparable(
 
   const stats = await githubService.fetchUserStats(username)
   const power = getPowerProgress(stats.points || 0)
+
+  const userId = cachedUser?.id ?? user.id?.toString() ?? `user_${username.toLowerCase()}`
+  await storage.upsertUser({
+    id: userId,
+    username: user.login,
+    githubId: user.id?.toString(),
+    name: user.name,
+    profileImageUrl: user.avatar_url,
+    githubUrl: user.html_url,
+    githubCreatedAt: user.created_at ? new Date(user.created_at) : undefined,
+  })
+  await storage.upsertGithubStats({
+    userId,
+    overallContributions: stats.overallContributions || 0,
+    points: stats.points || 0,
+    totalStars: stats.totalStars || 0,
+    totalRepositories: stats.totalRepositories ?? user.public_repos ?? 0,
+    followers: stats.followers ?? user.followers ?? 0,
+    longestStreak: stats.longestStreak || 0,
+    mergedPullRequests: stats.mergedPullRequests || 0,
+    closedIssues: stats.closedIssues || 0,
+    totalReviews: stats.totalReviews || 0,
+    externalContributors: stats.externalContributors || 0,
+    languageCount: stats.languageCount || 0,
+    lastFetchedAt: new Date(),
+  })
 
   const summary: CompareProfileSummary = {
     login: user.login,

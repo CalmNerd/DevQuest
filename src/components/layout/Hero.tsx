@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
+import Link from 'next/link'
 import WorldMap from '../ui/icons/WorldMap'
 import { motion } from 'framer-motion'
-import { Search, Zap } from 'lucide-react'
+import { Search, Swords, Zap } from 'lucide-react'
 import { Button, Input } from '../ui'
 
 const Hero = () => {
@@ -64,6 +65,13 @@ const Hero = () => {
                                 Rank Up
                             </Button>
                         </div>
+                        <Link
+                            href="/compare"
+                            className="mt-3 inline-flex items-center justify-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                        >
+                            <Swords className="h-4 w-4" />
+                            or compare two developers
+                        </Link>
                     </form>
 
                     {/* Stats */}
