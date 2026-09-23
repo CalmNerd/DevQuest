@@ -34,6 +34,7 @@ const Header = () => {
     // Navigation links configuration
     const navLinks = [
         { href: '/leaderboards', label: 'Leaderboards' },
+        { href: '/compare', label: 'Compare' },
         { href: '/repositories', label: 'Explore Repos' },
         { href: '/issues-list', label: 'Hunt Issues' },
     ]
