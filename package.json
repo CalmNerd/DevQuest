@@ -16,6 +16,7 @@
     "db:test": "tsx scripts/test-database.ts",
     "test:leaderboard": "tsx scripts/test-leaderboard.ts",
     "test:contribution-graph": "tsx scripts/test-contribution-graph.ts",
+    "test:comparison": "tsx scripts/test-comparison.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
